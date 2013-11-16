@@ -3,6 +3,35 @@ import pandas as pd
 import pandas.io.sql as pdsql
 import scipy.io as sio
 import numpy as np
+import h5py
+import scipy.signal as ssig
+import warnings
+
+def decimate(x, decfrac, axis=-1):
+    """
+    just like in the scipy source code, except I use filtfilt
+    and opt for hardcode defaults
+    q is the fraction to decimate by; length of returned data is len(x)/q
+    """
+    if decfrac > 15:
+        wrnstr = """You are attempting to decimate by a factor > 15. You are risking numerical instability. Consider performing multiple successive decimations instead."""
+        warnings.warn(wrnstr)
+
+    n = 8
+    b, a = ssig.filter_design.cheby1(n, 0.05, 0.8/decfrac)
+
+    y = ssig.filtfilt(b, a, x, axis=axis)
+
+    sl = [slice(None)] * y.ndim
+    sl[axis] = slice(None, None, decfrac)
+    return y[sl]
+
+
+def WriteToDB(dbname, tblname, df):
+    db = MySQLdb.connect(host='localhost',
+        user='root', passwd='', db=dbname)
+    pdsql.write_frame(df, con=db, name=tblname,
+        if_exists='append', flavor='mysql')
 
 def SetupDB():
     # connect to database server
@@ -18,6 +47,9 @@ def SetupDB():
         USE bartc;
         CREATE TABLE spikes (patient TINYINT, dataset TINYINT, 
             channel TINYINT, unit TINYINT, time DECIMAL(7,3));
+        CREATE TABLE lfp (patient TINYINT, dataset TINYINT, 
+            channel TINYINT, unit TINYINT, time DECIMAL(7,3), 
+            voltage DOUBLE);
         """
     cur.execute(setupstr)
 
@@ -26,7 +58,6 @@ def ImportSpikes(ftup, datadir):
     fname = ('times_' + str(ftup[0]) + '.' + str(ftup[1]) + '.plx' + 
         str(ftup[2]) + '.mat')
     fullname = datadir + pdir + '/' + fname
-
     dat = sio.loadmat(fullname)['cluster_class']
     
     unit = dat[:,0].astype('int')
@@ -44,12 +75,28 @@ def ImportSpikes(ftup, datadir):
     'channel': ftup[2], 'unit': unit, 'time': times}
     df = pd.DataFrame(ddict)
 
-    db = MySQLdb.connect(host='localhost',
-        user='root', passwd='', db='bartc')
-    pdsql.write_frame(df, con=db, name='spikes',
-        if_exists='append', flavor='mysql')
-    db.close()
+    WriteToDB('bartc', 'spikes', df)
 
+
+def ImportLFP(ftup, datadir):
+    pdir = 'patient' + str(ftup[0]).zfill(3)
+    fname = str(ftup[0]) + '.' + str(ftup[1]) + '.plx' + str(ftup[2]) + '.mat'
+    fullname = datadir + pdir + '/' + fname
+    dset = h5py.File(fullname, 'r')
+    dat = dset['data'].value.squeeze()
+    sr = dset['srlfp'].value.squeeze()
+
+    vv = decimate(dat, 5)  # decimate data to 200 Hz
+    sr = sr / 5;
+    dt = (1. / sr).round(3)
+
+    times = (np.arange(0, vv.shape[0]) * dt).round(3).squeeze()
+    ddict = {'patient': ftup[0], 'dataset': ftup[1], 
+    'channel': ftup[2], 'time': times, 'voltage': vv}
+
+    df = pd.DataFrame(ddict)
+ 
+    WriteToDB('bartc', 'lfp', df)
 
 # read data
 # dat = pdsql.read_frame(qstr, db)
@@ -70,7 +117,7 @@ def ImportSpikes(ftup, datadir):
 if __name__ == '__main__':
 
     # build database and tables
-    SetupDB()
+    # SetupDB()
 
     # locations of relevant files
     ddir = '/home/jmp33/data/bartc/plexdata/'
@@ -84,6 +131,9 @@ if __name__ == '__main__':
             ulist.append(tuple(map(int, line.split(','))))
 
     # iterate through files, loading data
-    for ftup in ulist:
-        ImportSpikes(ftup, ddir)
+    # for ftup in ulist:
+    #     ImportSpikes(ftup, ddir)
+
+    ftup = 18,1,32
+    ImportLFP(ftup, ddir)
 
