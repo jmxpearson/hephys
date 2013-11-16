@@ -117,12 +117,14 @@ def ImportLFP(ftup, datadir):
 if __name__ == '__main__':
 
     # build database and tables
-    # SetupDB()
+    SetupDB()
 
     # locations of relevant files
     ddir = '/home/jmp33/data/bartc/plexdata/'
     spkfile = '/home/jmp33/code/hephys/valid_units.csv'
+    lfpfile = '/home/jmp33/code/hephys/lfp_channel_file.csv'
 
+    ############### spikes #################
     # get list of tuples with valid channels
     ulist = []
 
@@ -131,9 +133,20 @@ if __name__ == '__main__':
             ulist.append(tuple(map(int, line.split(','))))
 
     # iterate through files, loading data
-    # for ftup in ulist:
-    #     ImportSpikes(ftup, ddir)
+    for ftup in ulist:
+        print ftup
+        ImportSpikes(ftup, ddir)
 
-    ftup = 18,1,32
-    ImportLFP(ftup, ddir)
+    ############### lfp #################
+    # load lfp data
+    ulist = []
+
+    with open(lfpfile) as infile:
+        for line in infile:
+            ulist.append(tuple(map(int, line.split(','))))
+
+    # iterate through files, loading data
+    for ftup in ulist:
+        print ftup
+        ImportLFP(ftup, ddir)
 
