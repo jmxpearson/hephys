@@ -146,7 +146,7 @@ if __name__ == '__main__':
     ############### spikes #################
     # get list of tuples with valid channels
     ulist = []
-
+    print 'Loading Spikes....\n'
     with open(spkfile) as infile:
         for line in infile:
             ulist.append(tuple(map(int, line.split(','))))
@@ -159,7 +159,7 @@ if __name__ == '__main__':
     ############### lfp #################
     # load lfp data
     ulist = []
-
+    print 'Loading LFP....\n'
     with open(lfpfile) as infile:
         for line in infile:
             ulist.append(tuple(map(int, line.split(','))))
@@ -172,7 +172,7 @@ if __name__ == '__main__':
     ############### censoring #################
     # load lfp data
     ulist = []
-
+    print 'Loading Censoring data....\n'
     with open(chanfile) as infile:
         for line in infile:
             ulist.append(tuple(map(int, line.split(','))))
