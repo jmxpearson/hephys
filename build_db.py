@@ -50,6 +50,9 @@ def SetupDB():
         CREATE TABLE lfp (patient TINYINT, dataset TINYINT, 
             channel TINYINT, unit TINYINT, time DECIMAL(7,3), 
             voltage DOUBLE);
+        CREATE TABLE censor (patient TINYINT, dataset TINYINT, 
+            channel TINYINT, start DECIMAL(7,3), 
+            stop DECIMAL(7,3));
         """
     cur.execute(setupstr)
 
@@ -90,13 +93,28 @@ def ImportLFP(ftup, datadir):
     sr = sr / 5;
     dt = (1. / sr).round(3)
 
-    times = (np.arange(0, vv.shape[0]) * dt).round(3).squeeze()
+    times = (np.arange(0, vv.size) * dt).round(3).squeeze()
     ddict = {'patient': ftup[0], 'dataset': ftup[1], 
     'channel': ftup[2], 'time': times, 'voltage': vv}
 
     df = pd.DataFrame(ddict)
  
     WriteToDB('bartc', 'lfp', df)
+
+def ImportCensor(ftup, datadir):
+    pdir = 'patient' + str(ftup[0]).zfill(3)
+    fname = (str(ftup[0]) + '.' + str(ftup[1]) + '.plx' + str(ftup[2]) + 
+        '_censoring.mat')
+    fullname = datadir + pdir + '/' + fname
+    excludes = sio.loadmat(fullname)['excludes'].round(3)
+
+    if excludes.size != 0:
+        ddict = {'patient': ftup[0], 'dataset': ftup[1], 
+        'channel': ftup[2], 'start': excludes[:,0], 'stop': excludes[:,1]}
+
+        df = pd.DataFrame(ddict)
+     
+        WriteToDB('bartc', 'censor', df)
 
 # read data
 # dat = pdsql.read_frame(qstr, db)
@@ -123,6 +141,7 @@ if __name__ == '__main__':
     ddir = '/home/jmp33/data/bartc/plexdata/'
     spkfile = '/home/jmp33/code/hephys/valid_units.csv'
     lfpfile = '/home/jmp33/code/hephys/lfp_channel_file.csv'
+    chanfile = '/home/jmp33/code/hephys/valid_channels.csv'
 
     ############### spikes #################
     # get list of tuples with valid channels
@@ -150,3 +169,15 @@ if __name__ == '__main__':
         print ftup
         ImportLFP(ftup, ddir)
 
+    ############### censoring #################
+    # load lfp data
+    ulist = []
+
+    with open(chanfile) as infile:
+        for line in infile:
+            ulist.append(tuple(map(int, line.split(','))))
+
+    # iterate through files, loading data
+    for ftup in ulist:
+        print ftup
+        ImportCensor(ftup, ddir)
