@@ -53,6 +53,13 @@ def SetupDB():
         CREATE TABLE censor (patient TINYINT, dataset TINYINT, 
             channel TINYINT, start DECIMAL(7,3), 
             stop DECIMAL(7,3));
+        CREATE TABLE events (patient TINYINT, dataset TINYINT, 
+            trial_start_time DECIMAL(7,3), this_balloon TINYINT,
+            trial_type TINYINT, points INT, inflate_time DECIMAL(7,3),
+            this_run TINYINT, rt DECIMAL(7,3), score INT, 
+            banked DECIMAL(7,3), outcome DECIMAL(7,3), popped DECIMAL(7,3),
+            start_inflating DECIMAL(7,3), stop_inflating DECIMAL(7,3),
+            trial_over DECIMAL(7,3), trial_start DECIMAL(7,3));
         """
     cur.execute(setupstr)
 
@@ -136,6 +143,7 @@ def ImportEvents(ftup, datadir, behdir):
     bf.index.names = ['trial']
     evf = bf[['ev', 'evt']]
     bf = bf.drop(['ev', 'evt'], axis=1)
+    absstart = bf['trial_start_time'][0]
 
     # get all unique event types
     tlist = []
@@ -143,19 +151,47 @@ def ImportEvents(ftup, datadir, behdir):
         thistrial = {'event': evf['ev'][ind], 'time': evf['evt'][ind]}
         miniframe = pd.DataFrame(thistrial, 
             index=pd.Index(ind * np.ones_like(evf['ev'][ind]), name='trial'))
+        # now take care of timestamps by putting times in seconds and adjusting
+        # by start time of first trial
+        miniframe['time'] /= 1000. 
+        miniframe['time'] += bf['trial_start_time'][ind] - absstart
+        miniframe['time'] = miniframe['time'].round(3)  # round to ms
         tlist.append(miniframe)
     events = pd.concat(tlist)
     # make event names column names
     events = events.set_index('event', append=True).unstack()
     # get rid of multi-index labeling
-    events.columns = pd.Index([e[1] for e in events.columns]) 
+    events.columns = pd.Index([e[1] for e in events.columns])
 
     # now merge all data for each trial
     df = pd.concat([bf, events], axis=1)
+    df['patient'] = ftup[0]
+    df['dataset'] = ftup[1]
 
     # if we have Plexon events, use them
+    if not isFHC:
+        # trial start
+        if df.shape[0] == evt[0].shape[0]:  # same number of trial starts 
+            df['trial_start'] = evt[0].round(3)
+        else:
+            df['trial_start'] = evt[0][1:].round(3)
 
-    df = df.where((pd.notnull(df)), None)
+        # trial stop
+        if df.shape[0] == evt[7].shape[0]:  # same number of trial starts 
+            df['trial_over'] = evt[7].round(3)
+        else:
+            df['trial_over'][:-1] = evt[7].round(3)
+
+        # rest of vars
+        vlist = zip(['start inflating', 'stop inflating', 'banked', 'outcome', 
+            'popped'], [1, 2, 3, 5, 4])
+        for var in vlist:
+            valid = pd.notnull(df[var[0]])
+            df[valid][var[0]] = evt[var[1]].round(3).squeeze()
+
+    # do some final tidying
+    df = df[df['result'] != 'aborted']  # get rid of aborts
+    df = df.where((pd.notnull(df)), None)  # replace NaN with None
 
     WriteToDB('bartc', 'events', df)
 
@@ -165,15 +201,6 @@ def ImportEvents(ftup, datadir, behdir):
 # # write data
 # pdsql.write_frame(dat, con=db, name='supp',
 #     if_exists='replace', flavor='mysql')
-
-########### tests ##################
-# patient = 18
-# dset = 1
-# chan = 1
-# unit = 2
-
-# ftup = (patient, dset, chan, unit)
-
 
 if __name__ == '__main__':
 
