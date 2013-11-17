@@ -116,6 +116,49 @@ def ImportCensor(ftup, datadir):
      
         WriteToDB('bartc', 'censor', df)
 
+def ImportEvents(ftup, datadir, behdir):
+    pdir = 'patient' + str(ftup[0]).zfill(3)
+    fname = str(ftup[0]) + '.' + str(ftup[1]) + '.plx_events.mat' 
+    fullname = datadir + pdir + '/' + fname
+    behname = behdir + pdir + '/' + ftup[2]
+
+    # load plexon events
+    evt = sio.loadmat(fullname)['evt'].squeeze()
+
+    # load matlab events
+    matevt = sio.loadmat(behname, squeeze_me = True)['data']
+
+    # was this an FHC recording? if so, there are no Plexon stamps
+    isFHC = (evt.size < 8) or (evt[-1].size == 1)
+
+    # make a dataframe from matlab behavior, pull out event codes
+    bf = pd.DataFrame(matevt)
+    bf.index.names = ['trial']
+    evf = bf[['ev', 'evt']]
+    bf = bf.drop(['ev', 'evt'], axis=1)
+
+    # get all unique event types
+    tlist = []
+    for ind in evf.index:
+        thistrial = {'event': evf['ev'][ind], 'time': evf['evt'][ind]}
+        miniframe = pd.DataFrame(thistrial, 
+            index=pd.Index(ind * np.ones_like(evf['ev'][ind]), name='trial'))
+        tlist.append(miniframe)
+    events = pd.concat(tlist)
+    # make event names column names
+    events = events.set_index('event', append=True).unstack()
+    # get rid of multi-index labeling
+    events.columns = pd.Index([e[1] for e in events.columns]) 
+
+    # now merge all data for each trial
+    df = pd.concat([bf, events], axis=1)
+
+    # if we have Plexon events, use them
+
+    df = df.where((pd.notnull(df)), None)
+
+    WriteToDB('bartc', 'events', df)
+
 # read data
 # dat = pdsql.read_frame(qstr, db)
 
@@ -139,45 +182,60 @@ if __name__ == '__main__':
 
     # locations of relevant files
     ddir = '/home/jmp33/data/bartc/plexdata/'
+    bdir = '/home/jmp33/data/bartc/behavior/'
     spkfile = '/home/jmp33/code/hephys/valid_units.csv'
     lfpfile = '/home/jmp33/code/hephys/lfp_channel_file.csv'
     chanfile = '/home/jmp33/code/hephys/valid_channels.csv'
+    behfile = '/home/jmp33/code/hephys/behavior_file_map.csv'
 
     ############### spikes #################
     # get list of tuples with valid channels
-    ulist = []
-    print 'Loading Spikes....\n'
+    tuplist = []
+    print 'Loading Spikes....'
     with open(spkfile) as infile:
         for line in infile:
-            ulist.append(tuple(map(int, line.split(','))))
+            tuplist.append(tuple(map(int, line.split(','))))
 
     # iterate through files, loading data
-    for ftup in ulist:
+    for ftup in tuplist:
         print ftup
         ImportSpikes(ftup, ddir)
 
+    ############### events #################        
+    # get all (patient, dataset) tuples from already loaded spikes
+    tuplist = []
+    print 'Loading Events....'
+    with open(behfile) as infile:
+        for line in infile:
+            thistup = tuple(line.rstrip().lower().split(','))
+            tuplist.append((int(thistup[0]), int(thistup[1]), thistup[2]))
+
+    for ftup in tuplist:
+        print ftup
+        ImportEvents(ftup, ddir, bdir)
+
     ############### lfp #################
     # load lfp data
-    ulist = []
-    print 'Loading LFP....\n'
+    tuplist = []
+    print 'Loading LFP....'
     with open(lfpfile) as infile:
         for line in infile:
-            ulist.append(tuple(map(int, line.split(','))))
+            tuplist.append(tuple(map(int, line.split(','))))
 
     # iterate through files, loading data
-    for ftup in ulist:
+    for ftup in tuplist:
         print ftup
         ImportLFP(ftup, ddir)
 
     ############### censoring #################
     # load lfp data
-    ulist = []
-    print 'Loading Censoring data....\n'
+    tuplist = []
+    print 'Loading Censoring data....'
     with open(chanfile) as infile:
         for line in infile:
-            ulist.append(tuple(map(int, line.split(','))))
+            tuplist.append(tuple(map(int, line.split(','))))
 
     # iterate through files, loading data
-    for ftup in ulist:
+    for ftup in tuplist:
         print ftup
         ImportCensor(ftup, ddir)
