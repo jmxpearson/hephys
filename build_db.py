@@ -59,7 +59,8 @@ def SetupDB():
             this_run TINYINT, rt DECIMAL(7,3), score INT, 
             banked DECIMAL(7,3), outcome DECIMAL(7,3), popped DECIMAL(7,3),
             start_inflating DECIMAL(7,3), stop_inflating DECIMAL(7,3),
-            trial_over DECIMAL(7,3), trial_start DECIMAL(7,3));
+            trial_over DECIMAL(7,3), trial_start DECIMAL(7,3), 
+            result VARCHAR(20));
         """
     cur.execute(setupstr)
 
@@ -145,7 +146,7 @@ def ImportEvents(ftup, datadir, behdir):
     bf = bf.drop(['ev', 'evt'], axis=1)
     absstart = bf['trial_start_time'][0]
 
-    # get all unique event types
+    # turn each trial into a dataframe 
     tlist = []
     for ind in evf.index:
         thistrial = {'event': evf['ev'][ind], 'time': evf['evt'][ind]}
@@ -157,26 +158,28 @@ def ImportEvents(ftup, datadir, behdir):
         miniframe['time'] += bf['trial_start_time'][ind] - absstart
         miniframe['time'] = miniframe['time'].round(3)  # round to ms
         tlist.append(miniframe)
+
+    # concatenate trials
     events = pd.concat(tlist)
     # make event names column names
     events = events.set_index('event', append=True).unstack()
     # get rid of multi-index labeling
     events.columns = pd.Index([e[1] for e in events.columns])
 
-    # now merge all data for each trial
+    # now merge both event datasets 
     df = pd.concat([bf, events], axis=1)
     df['patient'] = ftup[0]
     df['dataset'] = ftup[1]
 
     # if we have Plexon events, use them
     if not isFHC:
-        # trial start
+        # trial start -- sometimes a spurious event marks recording onset
         if df.shape[0] == evt[0].shape[0]:  # same number of trial starts 
             df['trial_start'] = evt[0].round(3)
         else:
             df['trial_start'] = evt[0][1:].round(3)
 
-        # trial stop
+        # trial stop -- when last trial aborted, may not be present
         if df.shape[0] == evt[7].shape[0]:  # same number of trial starts 
             df['trial_over'] = evt[7].round(3)
         else:
