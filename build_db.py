@@ -54,13 +54,13 @@ def SetupDB():
             channel TINYINT, start DECIMAL(7,3), 
             stop DECIMAL(7,3));
         CREATE TABLE events (patient TINYINT, dataset TINYINT, 
-            trial_start_time DECIMAL(7,3), this_balloon TINYINT,
+            trial_start_time DOUBLE, this_balloon TINYINT,
             trial_type TINYINT, points INT, inflate_time DECIMAL(7,3),
             this_run TINYINT, rt DECIMAL(7,3), score INT, 
             banked DECIMAL(7,3), outcome DECIMAL(7,3), popped DECIMAL(7,3),
             start_inflating DECIMAL(7,3), stop_inflating DECIMAL(7,3),
             trial_over DECIMAL(7,3), trial_start DECIMAL(7,3), 
-            result VARCHAR(20));
+            result VARCHAR(20), is_control BOOL, ctrltime DECIMAL(7,3));
         """
     cur.execute(setupstr)
 
@@ -218,19 +218,6 @@ if __name__ == '__main__':
     chanfile = '/home/jmp33/code/hephys/valid_channels.csv'
     behfile = '/home/jmp33/code/hephys/behavior_file_map.csv'
 
-    ############### spikes #################
-    # get list of tuples with valid channels
-    tuplist = []
-    print 'Loading Spikes....'
-    with open(spkfile) as infile:
-        for line in infile:
-            tuplist.append(tuple(map(int, line.split(','))))
-
-    # iterate through files, loading data
-    for ftup in tuplist:
-        print ftup
-        ImportSpikes(ftup, ddir)
-
     ############### events #################        
     # get all (patient, dataset) tuples from already loaded spikes
     tuplist = []
@@ -243,6 +230,19 @@ if __name__ == '__main__':
     for ftup in tuplist:
         print ftup
         ImportEvents(ftup, ddir, bdir)
+
+    ############### spikes #################
+    # get list of tuples with valid channels
+    tuplist = []
+    print 'Loading Spikes....'
+    with open(spkfile) as infile:
+        for line in infile:
+            tuplist.append(tuple(map(int, line.split(','))))
+
+    # iterate through files, loading data
+    for ftup in tuplist:
+        print ftup
+        ImportSpikes(ftup, ddir)
 
     ############### lfp #################
     # load lfp data
