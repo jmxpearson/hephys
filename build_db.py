@@ -26,12 +26,15 @@ def SetupDB():
         USE bartc;
         CREATE TABLE spikes (patient TINYINT, dataset TINYINT, 
             channel TINYINT, unit TINYINT, time DECIMAL(7,3));
+        CREATE INDEX by_set ON spikes (patient, dataset, channel, unit);
         CREATE TABLE lfp (patient TINYINT, dataset TINYINT, 
             channel TINYINT, unit TINYINT, time DECIMAL(7,3), 
             voltage DOUBLE);
+        CREATE INDEX by_set ON lfp (patient, dataset, channel);
         CREATE TABLE censor (patient TINYINT, dataset TINYINT, 
             channel TINYINT, start DECIMAL(7,3), 
             stop DECIMAL(7,3));
+        CREATE INDEX by_set ON censor (patient, dataset, channel);
         CREATE TABLE events (patient TINYINT, dataset TINYINT, 
             trial_start_time DOUBLE, this_balloon TINYINT,
             trial_type TINYINT, points INT, inflate_time DECIMAL(7,3),
@@ -40,6 +43,7 @@ def SetupDB():
             start_inflating DECIMAL(7,3), stop_inflating DECIMAL(7,3),
             trial_over DECIMAL(7,3), trial_start DECIMAL(7,3), 
             result VARCHAR(20), is_control BOOL, ctrltime DECIMAL(7,3));
+        CREATE INDEX by_set ON events (patient, dataset);
         """
     cur.execute(setupstr)
 
