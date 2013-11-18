@@ -4,28 +4,7 @@ import pandas.io.sql as pdsql
 import scipy.io as sio
 import numpy as np
 import h5py
-import scipy.signal as ssig
-import warnings
-
-def decimate(x, decfrac, axis=-1):
-    """
-    just like in the scipy source code, except I use filtfilt
-    and opt for hardcode defaults
-    q is the fraction to decimate by; length of returned data is len(x)/q
-    """
-    if decfrac > 15:
-        wrnstr = """You are attempting to decimate by a factor > 15. You are risking numerical instability. Consider performing multiple successive decimations instead."""
-        warnings.warn(wrnstr)
-
-    n = 8
-    b, a = ssig.filter_design.cheby1(n, 0.05, 0.8/decfrac)
-
-    y = ssig.filtfilt(b, a, x, axis=axis)
-
-    sl = [slice(None)] * y.ndim
-    sl[axis] = slice(None, None, decfrac)
-    return y[sl]
-
+from physutils import decimate
 
 def WriteToDB(dbname, tblname, df):
     db = MySQLdb.connect(host='localhost',
@@ -198,12 +177,6 @@ def ImportEvents(ftup, datadir, behdir):
 
     WriteToDB('bartc', 'events', df)
 
-# read data
-# dat = pdsql.read_frame(qstr, db)
-
-# # write data
-# pdsql.write_frame(dat, con=db, name='supp',
-#     if_exists='replace', flavor='mysql')
 
 if __name__ == '__main__':
 
