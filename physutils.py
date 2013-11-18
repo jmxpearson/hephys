@@ -111,7 +111,18 @@ def bandlimit(df, band=(0.01, 120)):
     bp = ssig.lfilter(b, a, df.values, axis=0)
     return pd.DataFrame(bp, index=df.index, columns=[''])
 
+def getSpikes(*args):
+    """
+    Convenience function to retrieve spikes from database.
+    args = (patient, dataset, channel, unit)
+    Missing entries imply "return all such valid."
+    """
+    names = ['patient', 'dataset', 'channel', 'unit']
+    qstr = """SELECT * FROM spikes WHERE patient = 18""" 
+    for tup in enumerate(args):
+        qstr += 'AND {} = {}'.format(names[tup[0]], tup[1])
 
+    return QueryDB(qstr)
 
 
 if __name__ == '__main__':
