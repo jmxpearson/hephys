@@ -92,6 +92,27 @@ def evtsplit(df, ts, startT, endT, t0=0):
     alltrials.columns = pd.Index(np.arange(1, nevt + 1), name='trial')
     return alltrials
 
+def bandlimit(df, band=(0.01, 120)):
+    """
+    Computes bandpass-filtered version of time series in df.
+    Band is either a two-element indexed sequence or a conventionally
+    defined electrophysiological frequency band.
+    """
+    dt = df.index[1] - df.index[0]
+    band_dict = {'delta': (0.1, 4), 'theta': (4, 8), 'alpha': (8, 13), 
+    'beta': (13, 30), 'gamma': (30, 100)}
+
+    # if band isn't a two-element sequence, it should be a string
+    if isinstance(band, str):
+        fband = band_dict[band]
+
+    b, a = ssig.ellip(2, 0.1, 40, [2 * dt * f for f in fband])
+    bp = ssig.lfilter(b, a, df.values, axis=0)
+    return pd.DataFrame(bp, index=df.index, columns=[''])
+
+
+
+
 if __name__ == '__main__':
 
     # get all spikes for a given unit 
@@ -109,3 +130,8 @@ if __name__ == '__main__':
     psth = evtsplit(binned, evt, -1, 1).mean(axis=1)
 
     smpsth = smooth(psth, 0.4)
+
+    df = QueryDB("""SELECT time, voltage FROM lfp WHERE 
+        patient = 18 AND dataset = 1 AND channel = 17
+        """)
+    df = df.set_index('time')
