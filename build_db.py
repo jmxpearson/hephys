@@ -240,6 +240,9 @@ if __name__ == '__main__':
     with open(chanfile) as infile:
         for line in infile:
             tuplist.append(tuple(map(int, line.split(','))))
+    with open(lfpfile) as infile:
+        for line in infile:
+            tuplist.append(tuple(map(int, line.split(','))))
 
     # iterate through files, loading data
     for ftup in tuplist:

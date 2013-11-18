@@ -139,6 +139,39 @@ def getLFP(*args):
 
     return QueryDB(qstr)
 
+def getCensor(*args):
+    """
+    Convenience function for retrieving censoring intervals from the db
+    and converting to logical arrays, one entry for each time point.
+    args = patient, dataset, channel
+    Assumes timestamp range equal to that of lfp.
+    """
+    # first, construct time axis for data by getting last two timestamps of
+    # relevant lfp; use to find maximum timestamp and dt
+    qstr = ("""
+        SELECT time FROM lfp WHERE patient = {} AND dataset = {}
+        AND channel = {} ORDER BY time DESC LIMIT 2
+        """.format(*args))
+    lasttwo = QueryDB(qstr).values
+    dt = lasttwo[0] - lasttwo[1]
+    taxis = np.arange(0, lasttwo[0] + dt, dt)
+
+    # next, get a list of censoring times, supplement with 0 and inf 
+    # on either end
+    qstr = ("""
+        SELECT start, stop FROM censor WHERE patient = {} 
+        AND dataset = {} AND channel = {}
+        """.format(*args))
+    censbins = QueryDB(qstr).values.ravel()
+    # supplement bins
+    censbins = np.append([0.], censbins)
+    censbins = np.append(censbins, np.inf)
+
+    # finally, histogram the time axis; censored bins will have even indices
+    binnum = np.digitize(taxis, censbins)
+    return binnum % 2 == 0
+
+
 if __name__ == '__main__':
 
     # get all spikes for a given unit 
