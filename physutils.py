@@ -63,7 +63,34 @@ def smooth(df, wid):
     y = y[(wlen/2 - 1):-wlen/2]
     return pd.DataFrame(y, index=df.index, columns=df.columns.tolist())
 
+def evtsplit(df, ts, startT, endT, t0=0):
+    """
+    Split time series data into peri-event chunks. Data are in df.
+    Times of events around which to split are in ts. 
+    Code grabs startT:endT bins relative to event, so times before 
+    the event have startT < 0. The first time bin is take to have 
+    timestamp t0.
+    """
+    dt = df.index[1] - df.index[0]
+    xx = df.values.squeeze()
 
+    nevt = ts.size
+    nstart = np.ceil(startT / dt)
+    nend = np.ceil(endT / dt)
+    binT = np.arange(nstart, nend) * dt
+
+    evtrel = ts - t0
+
+    elist = []
+    for time in evtrel:
+        offset = np.around(time / dt)
+        ss = slice(nstart + offset, nend + offset)
+        elist.append(pd.DataFrame(xx[ss], columns=[time]))
+    alltrials = pd.concat(elist, axis=1)
+    alltrials = alltrials.set_index(binT)
+    alltrials.index.name = 'time'
+    alltrials.columns = pd.Index(np.arange(1, nevt + 1), name='trial')
+    return alltrials
 
 if __name__ == '__main__':
 
