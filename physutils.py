@@ -117,19 +117,32 @@ def getSpikes(*args):
     args = (patient, dataset, channel, unit)
     Missing entries imply "return all such valid."
     """
-    names = ['patient', 'dataset', 'channel', 'unit']
-    qstr = """SELECT * FROM spikes WHERE patient = 18""" 
-    for tup in enumerate(args):
-        qstr += 'AND {} = {}'.format(names[tup[0]], tup[1])
+    names = ['dataset', 'channel', 'unit']
+    qstr = 'SELECT * FROM spikes WHERE patient = {}'.format(args[0])
+    for tup in enumerate(args[1:]):
+        qstr += ' AND {} = {}'.format(names[tup[0]], tup[1])
+    qstr += ';'
 
     return QueryDB(qstr)
 
+def getLFP(*args):
+    """
+    Convenience function to retrieve spikes from database.
+    args = (patient, dataset, channel, unit)
+    Missing entries imply "return all such valid."
+    """
+    names = ['dataset', 'channel']
+    qstr = 'SELECT * FROM lfp WHERE patient = {}'.format(args[0])
+    for tup in enumerate(args[1:]):
+        qstr += ' AND {} = {}'.format(names[tup[0]], tup[1])
+    qstr += ';'
+
+    return QueryDB(qstr)
 
 if __name__ == '__main__':
 
     # get all spikes for a given unit 
-    df = QueryDB("""SELECT *
-    FROM spikes WHERE patient = 18 AND dataset = 1 AND channel = 1 AND unit = 1""")
+    df = getSpikes(18, 1, 1, 1)
 
     binsize = 0.050  # 50 ms bin
     binned = binspikes(df, binsize)
@@ -143,7 +156,5 @@ if __name__ == '__main__':
 
     smpsth = smooth(psth, 0.4)
 
-    df = QueryDB("""SELECT time, voltage FROM lfp WHERE 
-        patient = 18 AND dataset = 1 AND channel = 17
-        """)
+    df = getLFP(18, 1, 17)
     df = df.set_index('time')

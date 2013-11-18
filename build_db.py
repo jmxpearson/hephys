@@ -28,8 +28,7 @@ def SetupDB():
             channel TINYINT, unit TINYINT, time DECIMAL(7,3));
         CREATE INDEX by_set ON spikes (patient, dataset, channel, unit);
         CREATE TABLE lfp (patient TINYINT, dataset TINYINT, 
-            channel TINYINT, unit TINYINT, time DECIMAL(7,3), 
-            voltage DOUBLE);
+            channel TINYINT, time DECIMAL(7,3), voltage DOUBLE);
         CREATE INDEX by_set ON lfp (patient, dataset, channel);
         CREATE TABLE censor (patient TINYINT, dataset TINYINT, 
             channel TINYINT, start DECIMAL(7,3), 
