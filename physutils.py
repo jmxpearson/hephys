@@ -33,7 +33,7 @@ def QueryDB(qstr):
     dat = pdsql.read_frame(qstr, db)
     return dat
 
-def binarize(df, dt):
+def binspikes(df, dt):
     """
     Convert df, a Pandas dataframe of spike timestamps, to a binned
     histogram with bin width dt.
@@ -46,9 +46,12 @@ def binarize(df, dt):
 
 
 
+if __name__ == '__main__':
 
-# get all spikes for a given unit 
-qstr = """SELECT *
-FROM spikes WHERE patient = 18 AND dataset = 1 AND channel = 1 AND unit = 1"""
+    # get all spikes for a given unit 
+    qstr = """SELECT *
+    FROM spikes WHERE patient = 18 AND dataset = 1 AND channel = 1 AND unit = 1"""
+    df = QueryDB(qstr)
+    binsize = 0.050  # 50 ms bin
 
-binsize = 0.050  # 50 ms bin
+    psth = binspikes(df, binsize)
