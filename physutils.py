@@ -61,7 +61,7 @@ def smooth(df, wid):
     xx = np.r_[x[wlen-1:0:-1], x, x[-1:-wlen:-1]]
     y = np.convolve(ww/ww.sum(),xx, mode='valid')
     y = y[(wlen/2 - 1):-wlen/2]
-    return pd.DataFrame(y, index=df.index, columns=df.columns.tolist())
+    return pd.DataFrame(y, index=df.index, columns=[''])
 
 def evtsplit(df, ts, startT, endT, t0=0):
     """
@@ -95,11 +95,17 @@ def evtsplit(df, ts, startT, endT, t0=0):
 if __name__ == '__main__':
 
     # get all spikes for a given unit 
-    qstr = """SELECT *
-    FROM spikes WHERE patient = 18 AND dataset = 1 AND channel = 1 AND unit = 1"""
-    df = QueryDB(qstr)
+    df = QueryDB("""SELECT *
+    FROM spikes WHERE patient = 18 AND dataset = 1 AND channel = 1 AND unit = 1""")
+
     binsize = 0.050  # 50 ms bin
+    binned = binspikes(df, binsize)
 
-    psth = binspikes(df, binsize)
+    evt = QueryDB("""
+        SELECT banked FROM events WHERE patient = 18 AND 
+        dataset = 1 AND banked IS NOT NULL
+        """)['banked']
 
-    smpsth = smooth(psth, 0.2)
+    psth = evtsplit(binned, evt, -1, 1).mean(axis=1)
+
+    smpsth = smooth(psth, 0.4)
