@@ -42,7 +42,26 @@ def binspikes(df, dt):
     maxbin = np.ceil(maxT / dt)
     binT = np.arange(0, maxbin * dt, dt)
     binned = np.histogram(df['time'], binT)[0]
-    return pd.DataFrame(binned, index=binT[:-1])
+    dframe = pd.DataFrame(binned, index=pd.Index(binT[:-1], name='time'),
+        columns=['count'])
+    return dframe
+
+def smooth(df, wid):
+    """
+    performs smoothing by a window of width wid (in s); data in df
+    reflect data at both ends to minimize edge effect
+    smooths using a centered window, which is non-causal
+    """
+    ts = df.index[1] - df.index[0]
+    x = df.values.squeeze()
+    wlen = np.round(wid/ts)
+    ww = np.hanning(wlen)
+    # grab first wlen samples, reverse them, append to front,
+    # grab last wlen samples, reverse, append to end
+    xx = np.r_[x[wlen-1:0:-1], x, x[-1:-wlen:-1]]
+    y = np.convolve(ww/ww.sum(),xx, mode='valid')
+    y = y[(wlen/2 - 1):-wlen/2]
+    return pd.DataFrame(y, index=df.index, columns=df.columns.tolist())
 
 
 
@@ -55,3 +74,5 @@ if __name__ == '__main__':
     binsize = 0.050  # 50 ms bin
 
     psth = binspikes(df, binsize)
+
+    smpsth = smooth(psth, 0.2)
