@@ -78,24 +78,24 @@ for rec in setlist.iterrows():
 
     # grab random timepoints (true negatives in training set)
     print 'Generating true negatives...'
-    Nrand = 1000
     maxT = np.max(allbands.index.values)
-    rand_times = np.array([])
-    while len(rand_times) < Nrand:
-        # generate a candidate time point with at least Tpre before to grab
-        tt = np.random.rand() * (maxT - Tpre) + Tpre
-        tt = np.around(tt / dt) * dt  # round to nearest dt
-
+    # make some candidate random times
+    Nrand = 3000
+    tcands = np.random.rand(Nrand) * (maxT - Tpre) + Tpre
+    tcands = np.around(tcands / dt) * dt  # round to nearest dt
+    tcands = np.unique(tcands)
+    # now remove all those within [Tpre, Tpost] of true positives
+    rand_times = np.zeros_like(tcands)
+    for cand in enumerate(tcands):
         # how close are we to already selected times?
+        tt = cand[1]
         dist = evt - tt
 
         # if dist in [Tpre,0] or [0, Tpost], reject
-        if (np.any(np.logical_and(dist < Tpre, dist > 0)) or 
-            np.any(np.logical_and(dist > -Tpost, dist < 0)) or
-            tt in rand_times): 
-            pass
-        else:
-            rand_times = np.append(rand_times, tt)
+        if not (np.any(np.logical_and(dist < Tpre, dist > 0)) or 
+            np.any(np.logical_and(dist > -Tpost, dist < 0))):
+            rand_times[cand[0]] = tt 
+    rand_times = rand_times[rand_times != 0]
     trueneg = pd.DataFrame(rand_times, columns=['time'])
     trueneg['outcome'] = 0
 
