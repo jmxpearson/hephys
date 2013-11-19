@@ -30,7 +30,7 @@ allbands = pd.concat(bands, axis=1)
 # decimate data
 decfrac = 5  # reduce from 200 Hz to 40 Hz sampling rate
 dt = dt * decfrac
-tindex = np.arange(0, allbands.index[-1], dt)
+tindex = np.arange(0, allbands.index.values[-1], dt)
 parts = [pd.DataFrame(decimate(aa[1], decfrac)) for aa in allbands.iteritems()]
 allbands = pd.concat(parts, axis=1)
 allbands.index = tindex
@@ -41,7 +41,7 @@ allbands = allbands.apply(ssig.hilbert)
 allbands = allbands.apply(np.abs)
 
 # handle censoring
-excludes = getCensor(*dtup)
+excludes = getCensor(tindex, *dtup)
 excludes = excludes[::decfrac]
 allbands[excludes] = np.nan
 

@@ -110,7 +110,7 @@ def bandlimit(df, band=(0.01, 120)):
     b, a = ssig.ellip(2, 0.1, 40, [2 * dt * f for f in fband])
     # bp = ssig.lfilter(b, a, df.values, axis=0)
     # return pd.DataFrame(bp, index=df.index, columns=[''])
-    return df.apply(ssig.lfilter, raw=True, args=(b, a))
+    return df.apply(lambda x: ssig.lfilter(b, a, x), raw=True)
 
 def getSpikes(*args):
     """
@@ -140,29 +140,39 @@ def getLFP(*args):
 
     return QueryDB(qstr)
 
-def getCensor(*args):
+def getCensor(taxis, *args):
     """
     Convenience function for retrieving censoring intervals from the db
     and converting to logical arrays, one entry for each time point.
     args = patient, dataset, channel
     Assumes timestamp range equal to that of lfp.
     """
-    # first, construct time axis for data by getting last two timestamps of
-    # relevant lfp; use to find maximum timestamp and dt
-    qstr = ("""
-        SELECT time FROM lfp WHERE patient = {} AND dataset = {}
-        AND channel = {} ORDER BY time DESC LIMIT 2
-        """.format(*args))
-    lasttwo = QueryDB(qstr).values
-    dt = lasttwo[0] - lasttwo[1]
-    taxis = np.arange(0, lasttwo[0] + dt, dt)
 
     # next, get a list of censoring times, supplement with 0 and inf 
     # on either end
-    qstr = ("""
-        SELECT start, stop FROM censor WHERE patient = {} 
-        AND dataset = {} AND channel = {}
-        """.format(*args))
+    names = ['dataset', 'channel']
+    qstr = """SELECT start, stop, channel 
+    FROM censor WHERE patient = {}""".format(args[0])
+    for tup in enumerate(args[1:]):
+        qstr += ' AND {} = {}'.format(names[tup[0]], tup[1])
+    qstr += ';'
+
+    # get censoring intervals, group by channel
+    censors = QueryDB(qstr).groupby('channel')
+    # arrange start and stop times into linear sequence
+    censbins = censors.apply(lambda x: x[['start', 'stop']].values.ravel())
+    # bin times in taxis; censored bins will have even indices
+    binnum = censbins.apply(lambda x: np.digitize(taxis, x))
+    binnum = binnum.apply(lambda x: x % 2 == 0)
+
+    excludes = pd.concat([pd.Series(b) for b in binnum], axis=1)
+    excludes.columns = binnum.index  # channel names
+    excludes.index = taxis
+    
+    return excludes
+
+    ##### new plan: group by channel and perform digitization, followed 
+    # by logical or
     censbins = QueryDB(qstr).values.ravel()
     # supplement bins
     censbins = np.append([0.], censbins)
@@ -186,7 +196,6 @@ def getEvent(event, *args):
         AND dataset = {2} AND {0} is not NULL
         """.format(event, *args))
     return QueryDB(qstr)[event]
-    
 
 
 if __name__ == '__main__':
