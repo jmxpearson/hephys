@@ -7,18 +7,20 @@ from physutils import *
 dt = 1./200  # sampling rate in dataset
 
 # first, get a list of lfp channels
-qstr = """SELECT DISTINCT patient, dataset, channel FROM lfp;"""
-chanlist = QueryDB(qstr)
+qstr = """SELECT DISTINCT patient, dataset FROM events;"""
+setlist = QueryDB(qstr)
 
 
 
 # get data indices
-dtup = chanlist.iloc[49,:].values
+dtup = setlist.iloc[14,:].values
+print dtup
 
 # read in data
 lfp = getLFP(*dtup)
-lfp = lfp.set_index('time')
+lfp = lfp.set_index(['time', 'channel'])
 lfp = lfp['voltage']
+lfp = lfp.unstack()
 
 # break out by frequency band
 filters = ['delta', 'theta', 'alpha']
@@ -33,7 +35,6 @@ parts = [pd.DataFrame(decimate(aa[1], decfrac)) for aa in allbands.iteritems()]
 allbands = pd.concat(parts, axis=1)
 allbands.index = tindex
 allbands.index.name = 'time'
-allbands.columns = filters
 
 # get instantaneous power
 allbands = allbands.apply(ssig.hilbert)

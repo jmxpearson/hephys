@@ -108,8 +108,9 @@ def bandlimit(df, band=(0.01, 120)):
         fband = band_dict[band]
 
     b, a = ssig.ellip(2, 0.1, 40, [2 * dt * f for f in fband])
-    bp = ssig.lfilter(b, a, df.values, axis=0)
-    return pd.DataFrame(bp, index=df.index, columns=[''])
+    # bp = ssig.lfilter(b, a, df.values, axis=0)
+    # return pd.DataFrame(bp, index=df.index, columns=[''])
+    return df.apply(ssig.lfilter, raw=True, args=(b, a))
 
 def getSpikes(*args):
     """
