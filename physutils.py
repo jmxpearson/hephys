@@ -171,6 +171,22 @@ def getCensor(*args):
     binnum = np.digitize(taxis, censbins)
     return binnum % 2 == 0
 
+def getEvent(event, *args):
+    """
+    Convenience function for retrieving task events from the db.
+    event is a string of event type to retrieve
+    args = patient, dataset, channel
+    Assumes timestamp range equal to that of lfp.
+    """
+
+    # get events
+    qstr = ("""
+        SELECT {0} FROM events WHERE patient = {1} 
+        AND dataset = {2} AND {0} is not NULL
+        """.format(event, *args))
+    return QueryDB(qstr)[event]
+    
+
 
 if __name__ == '__main__':
 
@@ -180,10 +196,7 @@ if __name__ == '__main__':
     binsize = 0.050  # 50 ms bin
     binned = binspikes(df, binsize)
 
-    evt = QueryDB("""
-        SELECT banked FROM events WHERE patient = 18 AND 
-        dataset = 1 AND banked IS NOT NULL
-        """)['banked']
+    evt = getEvent('banked', 18, 1)
 
     psth = evtsplit(binned, evt, -1, 1).mean(axis=1)
 
