@@ -159,8 +159,17 @@ def getCensor(taxis, *args):
 
     # get censoring intervals, group by channel
     censors = QueryDB(qstr).groupby('channel')
+    
     # arrange start and stop times into linear sequence
-    censbins = censors.apply(lambda x: x[['start', 'stop']].values.ravel())
+    # (the extra pair of braces around the return value is to prevent
+    # pandas from converting the time array to a series when apply gets only
+    # a single return value (i.e., when censors has only a single group))
+    censbins = censors.apply(
+        lambda x: [x[['start', 'stop']].values.ravel()])
+    
+    # append 0 and inf to bins
+    censbins = censbins.apply(lambda x: np.append([0], x))
+    censbins = censbins.apply(lambda x: np.append(x, np.inf))
     # bin times in taxis; censored bins will have even indices
     binnum = censbins.apply(lambda x: np.digitize(taxis, x))
     binnum = binnum.apply(lambda x: x % 2 == 0)
@@ -170,17 +179,6 @@ def getCensor(taxis, *args):
     excludes.index = taxis
     
     return excludes
-
-    ##### new plan: group by channel and perform digitization, followed 
-    # by logical or
-    censbins = QueryDB(qstr).values.ravel()
-    # supplement bins
-    censbins = np.append([0.], censbins)
-    censbins = np.append(censbins, np.inf)
-
-    # finally, histogram the time axis; censored bins will have even indices
-    binnum = np.digitize(taxis, censbins)
-    return binnum % 2 == 0
 
 def getEvent(event, *args):
     """
