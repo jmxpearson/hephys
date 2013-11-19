@@ -164,8 +164,11 @@ def getCensor(taxis, *args):
     # (the extra pair of braces around the return value is to prevent
     # pandas from converting the time array to a series when apply gets only
     # a single return value (i.e., when censors has only a single group))
-    censbins = censors.apply(
-        lambda x: [x[['start', 'stop']].values.ravel()])
+    if censors.ngroups > 1:
+        flatfun = lambda x: x[['start', 'stop']].values.ravel()
+    else:
+        flatfun = lambda x: [x[['start', 'stop']].values.ravel()]
+    censbins = censors.apply(flatfun)
     
     # append 0 and inf to bins
     censbins = censbins.apply(lambda x: np.append([0], x))

@@ -72,8 +72,8 @@ for rec in setlist.iterrows():
     evt = getEvent('banked', *dtup)
     evt = np.around(evt / dt) * dt  # round to nearest dt
     # extend with nearby times
-    evt = [evt, evt - 0.5, evt - 1.0]
-    truepos = (pd.DataFrame(pd.concat(evt), columns=['time']))
+    truepos = (pd.DataFrame(pd.concat([evt, evt - 0.5, evt - 1.0]), 
+        columns=['time']))
     truepos['outcome'] = 1
 
     # grab random timepoints (true negatives in training set)
@@ -89,13 +89,17 @@ for rec in setlist.iterrows():
     for cand in enumerate(tcands):
         # how close are we to already selected times?
         tt = cand[1]
-        dist = evt - tt
+        dist = truepos['time'] - tt
 
         # if dist in [Tpre,0] or [0, Tpost], reject
         if not (np.any(np.logical_and(dist < Tpre, dist > 0)) or 
             np.any(np.logical_and(dist > -Tpost, dist < 0))):
             rand_times[cand[0]] = tt 
     rand_times = rand_times[rand_times != 0]
+    # if we have too many, we can always throw some away
+    if rand_times.size > 1000:
+        np.random.shuffle(rand_times)
+        rand_times = rand_times[:1000]
     trueneg = pd.DataFrame(rand_times, columns=['time'])
     trueneg['outcome'] = 0
 
