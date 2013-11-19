@@ -4,12 +4,12 @@ import scipy.signal as ssig
 from physutils import *
 
 # define some useful numbers
-dt = 1./200  # sampling rate in dataset
+np.random.seed(12345)
 
 # first, get a list of lfp channels
 qstr = """SELECT DISTINCT patient, dataset FROM lfp;"""
 setlist = QueryDB(qstr)
-
+setlist = setlist.iloc[9:10,:]
 # iterate over entries:
 for rec in setlist.iterrows():
 
@@ -20,7 +20,9 @@ for rec in setlist.iterrows():
 
     # read in data
     print 'Reading LFP...'
+    dt = 1./200  # sampling rate in dataset
     lfp = getLFP(*dtup)
+    nchan = lfp.shape[1]
     lfp = lfp.set_index(['time', 'channel'])
     lfp = lfp['voltage']
     lfp = lfp.unstack()
@@ -38,10 +40,15 @@ for rec in setlist.iterrows():
     decfrac = 5  # reduce from 200 Hz to 40 Hz sampling rate
     dt = dt * decfrac
     tindex = tindex[::decfrac]
-    parts = [pd.DataFrame(decimate(aa[1], decfrac)) for aa in allbands.iteritems()]
+    parts = [pd.DataFrame(decimate(aa[1], decfrac), columns=[aa[0]]) 
+    for aa in allbands.iteritems()]
     allbands = pd.concat(parts, axis=1)
     allbands.index = tindex
     allbands.index.name = 'time'
+    # attend to labeling
+    bandpairs = zip(filters * nchan, allbands.columns)
+    bandnames = [b[0] + '.' + str(b[1]) for b in bandpairs]
+    allbands.columns = bandnames
 
     # get instantaneous power
     print 'Calculating power...'
@@ -110,7 +117,7 @@ for rec in setlist.iterrows():
     # get running average estimate of power at each timepoint of interest
     print 'Running mean...'
     meanpwr = pd.rolling_mean(allbands, np.ceil(Tpre / dt), min_periods=1)
-    tset = pd.concat([meanpwr, allevt], axis=1, join='inner')
+    tset = pd.concat([allevt, meanpwr], axis=1, join='inner')
 
     # write out
     print 'Writing out...'
