@@ -5,9 +5,10 @@ import scipy.io as sio
 import numpy as np
 from physutils import decimate
 
-def WriteToDB(dbname, tblname, df):
+def WriteToDB(dbname, tblname, df, **kwargs):
     store = pdh5.HDFStore(dbname)
-    store.append(tblname, df)
+    store.append(tblname, df, **kwargs)
+    store.close()
 
 def ImportSpikes(ftup, datadir):
     pdir = 'patient' + str(ftup[0]).zfill(3)
@@ -139,6 +140,15 @@ def ImportEvents(ftup, datadir, behdir):
             valid = pd.notnull(df[var[0]])
             df[valid][var[0]] = evt[var[1]].round(3).squeeze()
 
+    # lastly, if we are missing control columns, make sure to add them
+    # (important for getting schema correct on initial write)
+    if not 'is_control' in df.keys():
+        df['is_control'] = np.nan
+    else:
+        df['is_control'] = df['is_control'].astype('float64')
+    if not 'ctrltime' in df.keys():
+        df['ctrltime'] = np.nan
+    
     # do some final tidying
     df = df[df['result'] != 'aborted']  # get rid of aborts
     # df = df.where((pd.notnull(df)), None)  # replace NaN with None
