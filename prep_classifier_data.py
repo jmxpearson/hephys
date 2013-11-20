@@ -47,16 +47,25 @@ for rec in setlist.iterrows():
     parts = [pd.DataFrame(decimate(aa[1], decfrac), columns=[aa[0]]) 
     for aa in allbands.iteritems()]
     allbands = pd.concat(parts, axis=1)
-    allbands.index = tindex
-    allbands.index.name = 'time'
+    
     # attend to labeling
-    bandpairs = zip(filters * nchan, allbands.columns)
+    bandpairs = zip(np.repeat(filters, nchan), allbands.columns)
     bandnames = [b[0] + '.' + str(b[1]) for b in bandpairs]
     allbands.columns = bandnames
 
     # get instantaneous power
     print 'Calculating power...'
-    allbands = allbands.apply(ssig.hilbert)
+    # could do the following with DataFrame.apply, but given how long
+    # it can take, preferred option is to use the print statement to
+    # show progress
+    parts = []
+    for aa in allbands.iteritems():
+        if nchan > 1:
+            print aa[0]
+        parts.append(pd.DataFrame(ssig.hilbert(aa[1]), columns=[aa[0]]))
+    allbands = pd.concat(parts, axis=1)
+    allbands.index = tindex
+    allbands.index.name = 'time'
     allbands = allbands.apply(np.absolute)
 
     # handle censoring
@@ -122,6 +131,7 @@ for rec in setlist.iterrows():
     print 'Running mean...'
     meanpwr = pd.rolling_mean(allbands, np.ceil(Tpre / dt), min_periods=1)
     tset = pd.concat([allevt, meanpwr], axis=1, join='inner')
+    tset = tset.dropna()  # can't send glmnet any row with a NaN
 
     # write out
     print 'Writing out...'

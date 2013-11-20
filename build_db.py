@@ -61,6 +61,11 @@ def ImportCensor(ftup, datadir):
     excludes = sio.loadmat(fullname)['excludes'].round(3)
 
     if excludes.size != 0:
+        #do this in case some exclude ranges make no sense
+        badrng = np.where(np.diff(excludes, axis=1) < 0)
+        excludes = np.delete(excludes, badrng, axis=0)
+
+        # get data ready
         ddict = {'patient': ftup[0], 'dataset': ftup[1], 
         'channel': ftup[2], 'start': excludes[:,0], 'stop': excludes[:,1]}
 
@@ -182,6 +187,25 @@ if __name__ == '__main__':
         print ftup
         ImportEvents(ftup, ddir, bdir)
 
+    ############### censoring #################
+    # load censoring data
+    tuplist = []
+    print 'Loading Censoring data....'
+    with open(chanfile) as infile:
+        for line in infile:
+            tuplist.append(tuple(map(int, line.split(','))))
+    with open(lfpfile) as infile:
+        for line in infile:
+            tuplist.append(tuple(map(int, line.split(','))))
+
+    WriteToDB(ddir + 'bartc.hdf5', 'meta/censlist', 
+        pd.DataFrame(tuplist, columns=['patient', 'dataset', 'channel']))
+
+    # iterate through files, loading data
+    for ftup in tuplist:
+        print ftup
+        ImportCensor(ftup, ddir)
+
     ############### spikes #################
     # get list of tuples with valid channels
     tuplist = []
@@ -214,22 +238,3 @@ if __name__ == '__main__':
     for ftup in tuplist:
         print ftup
         ImportLFP(ftup, ddir)
-
-    ############### censoring #################
-    # load censoring data
-    tuplist = []
-    print 'Loading Censoring data....'
-    with open(chanfile) as infile:
-        for line in infile:
-            tuplist.append(tuple(map(int, line.split(','))))
-    with open(lfpfile) as infile:
-        for line in infile:
-            tuplist.append(tuple(map(int, line.split(','))))
-
-    WriteToDB(ddir + 'bartc.hdf5', 'meta/censlist', 
-        pd.DataFrame(tuplist, columns=['patient', 'dataset', 'channel']))
-
-    # iterate through files, loading data
-    for ftup in tuplist:
-        print ftup
-        ImportCensor(ftup, ddir)
