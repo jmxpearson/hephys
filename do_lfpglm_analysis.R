@@ -1,13 +1,7 @@
 library(glmnet)
 source('dolfpglm.R')
+source('setup_env.R')
 
-adir <- '~/code/hephys'  # analysis directory
-ddir <- '~/data/bartc'  # data directory
-cfile <- 'lfp_channel_file.csv'
-chanlist <- read.csv(paste(adir, cfile, sep='/'), header=FALSE)
-chanlist <- chanlist[, 1:2]
-chanlist <- chanlist[!duplicated(chanlist),]
-numunits <- dim(chanlist)[1]
 
 fitobjs = list()
 for (ind in 1:numunits) {

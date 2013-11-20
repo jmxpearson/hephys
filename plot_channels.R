@@ -1,19 +1,12 @@
 # miscellaneous lfp channel plots
-adir <- '~/Dropbox/hephys/analysis'  # analysis directory
-ddir <- '~/data/bartc'  # data directory
-cfile <- 'lfp_channel_file.csv'
-chanlist <- read.csv(paste(adir, cfile, sep='/'), header=F)
-chanlist <- chanlist[, 1:2]
-chanlist <- chanlist[!duplicated(chanlist),]
-numunits <- dim(chanlist)[1]
 
-library(ggplot2)
-library(reshape)
+# load up useful vars
+source('helpers.R')
 
 ind = 10
 fname = paste(chanlist[ind, 1], chanlist[ind, 2], 'chanmeans', 'csv', sep='.')
 # load analysis output
-dat <- read.csv(file=paste(ddir, fname, sep='/'), header = F)
+dat <- read.csv(file=paste(ddir, fname, sep='/'), header = FALSE)
 names(dat) = c('time', 1:(dim(dat)[2] - 1))
 dat <- melt(dat, id.vars=c('time'))
 
