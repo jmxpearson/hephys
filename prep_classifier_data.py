@@ -1,10 +1,15 @@
 import numpy as np
 import pandas as pd
+import pandas.io.pytables as pdtbl
 import scipy.signal as ssig
 from physutils import *
 
 # define some useful numbers
 np.random.seed(12345)
+
+# open data file
+dbname = '/home/jmp33/data/bartc/plexdata/bartc.hdf5'
+store = pdtbl.HDFStore(dbname)
 
 # first, get a list of lfp channels
 qstr = """SELECT DISTINCT patient, dataset FROM lfp;"""
