@@ -7,7 +7,7 @@ from physutils import decimate
 
 def WriteToDB(dbname, tblname, df):
     store = pdh5.HDFStore(dbname)
-    store.put(tblname, df, append=True)
+    store.append(tblname, df)
 
 def ImportSpikes(ftup, datadir):
     pdir = 'patient' + str(ftup[0]).zfill(3)
@@ -81,13 +81,16 @@ def ImportEvents(ftup, datadir, behdir):
     matevt = sio.loadmat(behname, squeeze_me = True)['data']
 
     # was this an FHC recording? if so, there are no Plexon stamps
-    isFHC = (evt.size < 8) or (evt[-1].size == 1)
+    isFHC = (evt[0].size < 10)
 
     # make a dataframe from matlab behavior, pull out event codes
     bf = pd.DataFrame(matevt)
     bf.index.names = ['trial']
     evf = bf[['ev', 'evt']]
     bf = bf.drop(['ev', 'evt'], axis=1)
+    # make sure to get data types right
+    bf = bf.convert_objects()
+    bf['result'] = bf['result'].apply(str)
     absstart = bf['trial_start_time'][0]
 
     # turn each trial into a dataframe 
@@ -119,15 +122,15 @@ def ImportEvents(ftup, datadir, behdir):
     if not isFHC:
         # trial start -- sometimes a spurious event marks recording onset
         if df.shape[0] == evt[0].shape[0]:  # same number of trial starts 
-            df['trial_start'] = evt[0].round(3)
+            df['trial_start'] = evt[0].round(3).squeeze()
         else:
-            df['trial_start'] = evt[0][1:].round(3)
+            df['trial_start'] = evt[0][1:].round(3).squeeze()
 
         # trial stop -- when last trial aborted, may not be present
         if df.shape[0] == evt[7].shape[0]:  # same number of trial starts 
-            df['trial_over'] = evt[7].round(3)
+            df['trial_over'] = evt[7].round(3).squeeze()
         else:
-            df['trial_over'][:-1] = evt[7].round(3)
+            df['trial_over'][:-1] = evt[7].round(3).squeeze()
 
         # rest of vars
         vlist = zip(['start inflating', 'stop inflating', 'banked', 'outcome', 
@@ -138,7 +141,7 @@ def ImportEvents(ftup, datadir, behdir):
 
     # do some final tidying
     df = df[df['result'] != 'aborted']  # get rid of aborts
-    df = df.where((pd.notnull(df)), None)  # replace NaN with None
+    # df = df.where((pd.notnull(df)), None)  # replace NaN with None
 
     WriteToDB(ddir + 'bartc.hdf5', 'events', df)
 
