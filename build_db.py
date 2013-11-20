@@ -2,7 +2,7 @@ import h5py
 import pandas as pd
 import scipy.io as sio
 import numpy as np
-from physutils import decimate, MakePath
+from physutils import decimate, make_path
 
 def WriteToDB(dbname, tblname, df, **kwargs):
     df.to_hdf(dbname, tblname, append=True)
@@ -29,7 +29,7 @@ def ImportSpikes(ftup, datadir):
     'channel': ftup[2], 'unit': unit, 'time': times}
     df = pd.DataFrame(ddict)
 
-    target = 'spikes/' + MakePath(*ftup)
+    target = 'spikes/' + make_path(*ftup)
     WriteToDB(datadir + 'bartc.hdf5', target, df)
 
 def ImportLFP(ftup, datadir):
@@ -50,7 +50,7 @@ def ImportLFP(ftup, datadir):
 
     df = pd.DataFrame(ddict)
  
-    target = 'lfp/' + MakePath(*ftup) 
+    target = 'lfp/' + make_path(*ftup) 
     WriteToDB(datadir + 'bartc.hdf5', target, df)
 
 def ImportCensor(ftup, datadir):
@@ -66,7 +66,7 @@ def ImportCensor(ftup, datadir):
 
         df = pd.DataFrame(ddict)
      
-        target = 'censor/' + MakePath(*ftup) 
+        target = 'censor/' + make_path(*ftup) 
         WriteToDB(datadir + 'bartc.hdf5', target, df)
 
 def ImportEvents(ftup, datadir, behdir):
@@ -151,7 +151,7 @@ def ImportEvents(ftup, datadir, behdir):
     
     # do some final tidying
     df = df[df['result'] != 'aborted']  # get rid of aborts
-    target = 'events/' + MakePath(*ftup[:-1]) 
+    target = 'events/' + make_path(*ftup[:-1]) 
     WriteToDB(datadir + 'bartc.hdf5', target, df)
 
 

@@ -11,6 +11,7 @@ dbname = '/home/jmp33/data/bartc/plexdata/bartc.hdf5'
 
 # first, get a list of lfp channels
 setlist = pd.read_hdf(dbname, '/meta/lfplist')[['patient', 'dataset']]
+setlist = setlist.drop_duplicates()
 dirlist = pdtbl.HDFStore(dbname).keys()
 
 # iterate over entries:
@@ -25,10 +26,10 @@ for rec in setlist.iterrows():
     print 'Reading LFP...'
     dt = 1./200  # sampling rate in dataset
     lfp = fetch_all_such(dbname, 'lfp', *dtup, keys=dirlist)
-    nchan = lfp.shape[1]
     lfp = lfp.set_index(['time', 'channel'])
     lfp = lfp['voltage']
     lfp = lfp.unstack()
+    nchan = lfp.shape[1]
     # the following is a kludge because the dtype is set to 'O' by the multi-index
     tindex = lfp.index.values.astype('float64')
 
@@ -60,7 +61,7 @@ for rec in setlist.iterrows():
 
     # handle censoring
     print 'Censoring...'
-    excludes = getCensor(tindex, *dtup)
+    excludes = get_censor(dbname, tindex, *dtup)
     if not excludes.empty:
         excludes = excludes[excludes.columns.intersection(lfp.columns)]
         # can do something fancy later, but for now, take logical OR across all 
@@ -79,7 +80,7 @@ for rec in setlist.iterrows():
 
     # grab events (successful stops = true positives for training)
     print 'Fetching events...'
-    evt = getEvent('banked', *dtup)
+    evt = fetch(dbname, 'events', *dtup)['banked'].dropna()
     evt = np.around(evt / dt) * dt  # round to nearest dt
     # extend with nearby times
     truepos = (pd.DataFrame(pd.concat([evt, evt - 0.5, evt - 1.0]), 

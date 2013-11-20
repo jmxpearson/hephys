@@ -4,7 +4,7 @@ import pandas.io.pytables as pdtbl
 import scipy.signal as ssig
 import warnings
 
-def MakePath(*tup):
+def make_path(*tup):
     abbr = ['p', 'd', 'c', 'u'][:len(tup)]
     nstrs = map(str, tup)
     pieces = [a + b for a,b in zip(abbr, nstrs)]
@@ -113,7 +113,7 @@ def fetch(dbname, node, *args):
     Given a node ('lfp', 'spikes', 'events', 'censor'), and
     a tuple of (patient, dataset, channel, unit), retrieves data.
     """
-    target = node + '/' + MakePath(*args)
+    target = node + '/' + make_path(*args)
     return pd.read_hdf(dbname, target)
 
 def fetch_all_such(dbname, node, *args, **kwargs):
@@ -127,7 +127,7 @@ def fetch_all_such(dbname, node, *args, **kwargs):
     else:
         keys = pdtbl.HDFStore(dbname).keys()
 
-    glob = node + '/' + MakePath(*args)
+    glob = node + '/' + make_path(*args)
     # do really simple regex matching
     matches = [k for k in keys if glob in k]
 
@@ -136,6 +136,40 @@ def fetch_all_such(dbname, node, *args, **kwargs):
         parts.append(fetch(dbname, m))
 
     return pd.concat(parts)
+
+def get_censor(dbname, taxis, *args):
+    """
+    Convenience function for retrieving censoring intervals from the db
+    and converting to logical arrays, one entry for each time point.
+    args = patient, dataset, channel
+    Assumes timestamp range equal to that of lfp.
+    """
+    
+    # get censoring intervals, group by channel
+    censors = fetch_all_such(dbname, 'censor', *args).groupby('channel')
+    
+    # arrange start and stop times into linear sequence
+    # (the extra pair of braces around the return value is to prevent
+    # pandas from converting the time array to a series when apply gets only
+    # a single return value (i.e., when censors has only a single group))
+    if censors.ngroups > 1:
+        flatfun = lambda x: x[['start', 'stop']].values.ravel()
+    else:
+        flatfun = lambda x: [x[['start', 'stop']].values.ravel()]
+    censbins = censors.apply(flatfun)
+    
+    # append 0 and inf to bins
+    censbins = censbins.apply(lambda x: np.append([0], x))
+    censbins = censbins.apply(lambda x: np.append(x, np.inf))
+    # bin times in taxis; censored bins will have even indices
+    binnum = censbins.apply(lambda x: np.digitize(taxis, x))
+    binnum = binnum.apply(lambda x: x % 2 == 0)
+
+    excludes = pd.concat([pd.Series(b) for b in binnum], axis=1)
+    excludes.columns = binnum.index  # channel names
+    excludes.index = taxis
+    
+    return excludes
    
 
 
