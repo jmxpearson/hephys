@@ -1,50 +1,13 @@
-import MySQLdb
+import h5py
 import pandas as pd
-import pandas.io.sql as pdsql
+import pandas.io.pytables as pdh5
 import scipy.io as sio
 import numpy as np
-import h5py
 from physutils import decimate
 
 def WriteToDB(dbname, tblname, df):
-    db = MySQLdb.connect(host='localhost',
-        user='root', passwd='', db=dbname)
-    pdsql.write_frame(df, con=db, name=tblname,
-        if_exists='append', flavor='mysql')
-
-def SetupDB():
-    # connect to database server
-    db = MySQLdb.connect(host='localhost',
-        user='root', passwd='')
-
-    # create cursor
-    cur = db.cursor()
-
-    # create database and switch to it
-    setupstr = """
-        CREATE DATABASE bartc;
-        USE bartc;
-        CREATE TABLE spikes (patient TINYINT, dataset TINYINT, 
-            channel TINYINT, unit TINYINT, time DECIMAL(7,3));
-        CREATE INDEX by_set ON spikes (patient, dataset, channel, unit);
-        CREATE TABLE lfp (patient TINYINT, dataset TINYINT, 
-            channel TINYINT, time DECIMAL(7,3), voltage DOUBLE);
-        CREATE INDEX by_set ON lfp (patient, dataset, channel);
-        CREATE TABLE censor (patient TINYINT, dataset TINYINT, 
-            channel TINYINT, start DECIMAL(7,3), 
-            stop DECIMAL(7,3));
-        CREATE INDEX by_set ON censor (patient, dataset, channel);
-        CREATE TABLE events (patient TINYINT, dataset TINYINT, 
-            trial_start_time DOUBLE, this_balloon TINYINT,
-            trial_type TINYINT, points INT, inflate_time DECIMAL(7,3),
-            this_run TINYINT, rt DECIMAL(7,3), score INT, 
-            banked DECIMAL(7,3), outcome DECIMAL(7,3), popped DECIMAL(7,3),
-            start_inflating DECIMAL(7,3), stop_inflating DECIMAL(7,3),
-            trial_over DECIMAL(7,3), trial_start DECIMAL(7,3), 
-            result VARCHAR(20), is_control BOOL, ctrltime DECIMAL(7,3));
-        CREATE INDEX by_set ON events (patient, dataset);
-        """
-    cur.execute(setupstr)
+    store = pdh5.HDFStore(dbname)
+    store.put(tblname, df, append=True)
 
 def ImportSpikes(ftup, datadir):
     pdir = 'patient' + str(ftup[0]).zfill(3)
@@ -68,8 +31,7 @@ def ImportSpikes(ftup, datadir):
     'channel': ftup[2], 'unit': unit, 'time': times}
     df = pd.DataFrame(ddict)
 
-    WriteToDB('bartc', 'spikes', df)
-
+    WriteToDB(ddir + 'bartc.hdf5', 'spikes', df)
 
 def ImportLFP(ftup, datadir):
     pdir = 'patient' + str(ftup[0]).zfill(3)
@@ -89,7 +51,7 @@ def ImportLFP(ftup, datadir):
 
     df = pd.DataFrame(ddict)
  
-    WriteToDB('bartc', 'lfp', df)
+    WriteToDB(ddir + 'bartc.hdf5', 'lfp', df)
 
 def ImportCensor(ftup, datadir):
     pdir = 'patient' + str(ftup[0]).zfill(3)
@@ -104,7 +66,7 @@ def ImportCensor(ftup, datadir):
 
         df = pd.DataFrame(ddict)
      
-        WriteToDB('bartc', 'censor', df)
+        WriteToDB(ddir + 'bartc.hdf5', 'censor', df)
 
 def ImportEvents(ftup, datadir, behdir):
     pdir = 'patient' + str(ftup[0]).zfill(3)
@@ -178,13 +140,10 @@ def ImportEvents(ftup, datadir, behdir):
     df = df[df['result'] != 'aborted']  # get rid of aborts
     df = df.where((pd.notnull(df)), None)  # replace NaN with None
 
-    WriteToDB('bartc', 'events', df)
+    WriteToDB(ddir + 'bartc.hdf5', 'events', df)
 
 
 if __name__ == '__main__':
-
-    # build database and tables
-    SetupDB()
 
     # locations of relevant files
     ddir = '/home/jmp33/data/bartc/plexdata/'
