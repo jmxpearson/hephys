@@ -1,9 +1,14 @@
 import numpy as np
-import MySQLdb
 import pandas as pd
-import pandas.io.sql as pdsql
+import pandas.io.pytables as pdtbl
 import scipy.signal as ssig
 import warnings
+
+def MakePath(*tup):
+    abbr = ['p', 'd', 'c', 'u'][:len(tup)]
+    nstrs = map(str, tup)
+    pieces = [a + b for a,b in zip(abbr, nstrs)]
+    return '/'.join(pieces)
 
 def decimate(x, decfrac, axis=-1):
     """
@@ -23,15 +28,6 @@ def decimate(x, decfrac, axis=-1):
     sl = [slice(None)] * y.ndim
     sl[axis] = slice(None, None, decfrac)
     return y[sl]
-
-def QueryDB(qstr):
-    """
-    Query database using SQL query in qstr.
-    """
-    db = MySQLdb.connect(host='localhost',
-        user='root', passwd='', db='bartc')
-    dat = pdsql.read_frame(qstr, db)
-    return dat
 
 def binspikes(df, dt):
     """
@@ -112,106 +108,54 @@ def bandlimit(df, band=(0.01, 120)):
     # return pd.DataFrame(bp, index=df.index, columns=[''])
     return df.apply(lambda x: ssig.lfilter(b, a, x), raw=True)
 
-def getSpikes(*args):
+def fetch(dbname, node, *args):
     """
-    Convenience function to retrieve spikes from database.
-    args = (patient, dataset, channel, unit)
-    Missing entries imply "return all such valid."
+    Given a node ('lfp', 'spikes', 'events', 'censor'), and
+    a tuple of (patient, dataset, channel, unit), retrieves data.
     """
-    names = ['dataset', 'channel', 'unit']
-    qstr = 'SELECT * FROM spikes WHERE patient = {}'.format(args[0])
-    for tup in enumerate(args[1:]):
-        qstr += ' AND {} = {}'.format(names[tup[0]], tup[1])
-    qstr += ';'
+    target = node + '/' + MakePath(*args)
+    return pd.read_hdf(dbname, target)
 
-    return QueryDB(qstr)
-
-def getLFP(*args):
+def fetch_all_such(dbname, node, *args, **kwargs):
     """
-    Convenience function to retrieve spikes from database.
-    args = (patient, dataset, channel, unit)
-    Missing entries imply "return all such valid."
+    Given an incomplete specification in args, get all datasets consistent
+    with it. Return a single dataframe.
+    If database keys are precomputed to save time, they can be specified.
     """
-    names = ['dataset', 'channel']
-    qstr = 'SELECT * FROM lfp WHERE patient = {}'.format(args[0])
-    for tup in enumerate(args[1:]):
-        qstr += ' AND {} = {}'.format(names[tup[0]], tup[1])
-    qstr += ';'
-
-    return QueryDB(qstr)
-
-def getCensor(taxis, *args):
-    """
-    Convenience function for retrieving censoring intervals from the db
-    and converting to logical arrays, one entry for each time point.
-    args = patient, dataset, channel
-    Assumes timestamp range equal to that of lfp.
-    """
-
-    # next, get a list of censoring times, supplement with 0 and inf 
-    # on either end
-    names = ['dataset', 'channel']
-    qstr = """SELECT start, stop, channel 
-    FROM censor WHERE patient = {}""".format(args[0])
-    for tup in enumerate(args[1:]):
-        qstr += ' AND {} = {}'.format(names[tup[0]], tup[1])
-    qstr += ';'
-
-    # get censoring intervals, group by channel
-    censors = QueryDB(qstr).groupby('channel')
-    
-    # arrange start and stop times into linear sequence
-    # (the extra pair of braces around the return value is to prevent
-    # pandas from converting the time array to a series when apply gets only
-    # a single return value (i.e., when censors has only a single group))
-    if censors.ngroups > 1:
-        flatfun = lambda x: x[['start', 'stop']].values.ravel()
+    if 'keys' in kwargs:
+        keys = kwargs['keys']
     else:
-        flatfun = lambda x: [x[['start', 'stop']].values.ravel()]
-    censbins = censors.apply(flatfun)
-    
-    # append 0 and inf to bins
-    censbins = censbins.apply(lambda x: np.append([0], x))
-    censbins = censbins.apply(lambda x: np.append(x, np.inf))
-    # bin times in taxis; censored bins will have even indices
-    binnum = censbins.apply(lambda x: np.digitize(taxis, x))
-    binnum = binnum.apply(lambda x: x % 2 == 0)
+        keys = pdtbl.HDFStore(dbname).keys()
 
-    excludes = pd.concat([pd.Series(b) for b in binnum], axis=1)
-    excludes.columns = binnum.index  # channel names
-    excludes.index = taxis
-    
-    return excludes
+    glob = node + '/' + MakePath(*args)
+    # do really simple regex matching
+    matches = [k for k in keys if glob in k]
 
-def getEvent(event, *args):
-    """
-    Convenience function for retrieving task events from the db.
-    event is a string of event type to retrieve
-    args = patient, dataset, channel
-    Assumes timestamp range equal to that of lfp.
-    """
+    parts = []
+    for m in matches:
+        parts.append(fetch(dbname, m))
 
-    # get events
-    qstr = ("""
-        SELECT {0} FROM events WHERE patient = {1} 
-        AND dataset = {2} AND {0} is not NULL
-        """.format(event, *args))
-    return QueryDB(qstr)[event]
+    return pd.concat(parts)
+   
 
 
 if __name__ == '__main__':
 
     # get all spikes for a given unit 
-    df = getSpikes(18, 1, 1, 1)
+    # df = getSpikes(18, 1, 1, 1)
+    dbname = '/home/jmp33/data/bartc/plexdata/bartc.hdf5'
+    df = fetch(dbname, 'spikes', 18, 1, 1, 1)
 
     binsize = 0.050  # 50 ms bin
     binned = binspikes(df, binsize)
 
-    evt = getEvent('banked', 18, 1)
+    evt = fetch(dbname, 'events', 18, 1)['banked'].dropna()
 
     psth = evtsplit(binned, evt, -1, 1).mean(axis=1)
 
     smpsth = smooth(psth, 0.4)
 
-    df = getLFP(18, 1, 17)
+    df = fetch_all_such(dbname, 'spikes', 17, 2)
+
+    df = fetch(dbname, 'lfp', 18, 1, 17)
     df = df.set_index('time')

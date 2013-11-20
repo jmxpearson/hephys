@@ -2,16 +2,10 @@ import h5py
 import pandas as pd
 import scipy.io as sio
 import numpy as np
-from physutils import decimate
+from physutils import decimate, MakePath
 
 def WriteToDB(dbname, tblname, df, **kwargs):
     df.to_hdf(dbname, tblname, append=True)
-
-def MakePath(*tup):
-    abbr = ['p', 'd', 'c', 'u'][:len(tup)]
-    nstrs = map(str, tup)
-    pieces = [a + b for a,b in zip(abbr, nstrs)]
-    return '/'.join(pieces)
 
 def ImportSpikes(ftup, datadir):
     pdir = 'patient' + str(ftup[0]).zfill(3)
