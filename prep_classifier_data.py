@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import pandas.io.pytables as pdtbl
 import scipy.signal as ssig
 from physutils import *
 
@@ -9,12 +8,11 @@ np.random.seed(12345)
 
 # open data file
 dbname = '/home/jmp33/data/bartc/plexdata/bartc.hdf5'
-store = pdtbl.HDFStore(dbname)
 
 # first, get a list of lfp channels
-qstr = """SELECT DISTINCT patient, dataset FROM lfp;"""
-setlist = QueryDB(qstr)
-setlist = setlist.iloc[9:10,:]
+setlist = pd.read_hdf(dbname, '/meta/lfplist')[['patient', 'dataset']]
+dirlist = pdtbl.HDFStore(dbname).keys()
+
 # iterate over entries:
 for rec in setlist.iterrows():
 
@@ -26,7 +24,7 @@ for rec in setlist.iterrows():
     # read in data
     print 'Reading LFP...'
     dt = 1./200  # sampling rate in dataset
-    lfp = getLFP(*dtup)
+    lfp = fetch_all_such(dbname, 'lfp', *dtup, keys=dirlist)
     nchan = lfp.shape[1]
     lfp = lfp.set_index(['time', 'channel'])
     lfp = lfp['voltage']
