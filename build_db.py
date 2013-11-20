@@ -1,14 +1,11 @@
 import h5py
 import pandas as pd
-import pandas.io.pytables as pdh5
 import scipy.io as sio
 import numpy as np
 from physutils import decimate
 
 def WriteToDB(dbname, tblname, df, **kwargs):
-    store = pdh5.HDFStore(dbname)
-    store.append(tblname, df, **kwargs)
-    store.close()
+    df.to_hdf(dbname, tblname, append=True)
 
 def ImportSpikes(ftup, datadir):
     pdir = 'patient' + str(ftup[0]).zfill(3)
