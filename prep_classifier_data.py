@@ -33,7 +33,9 @@ for rec in setlist.iterrows():
     # the following is a kludge because the dtype is set to 'O' by the multi-index
     tindex = lfp.index.values.astype('float64')
 
-    # break out by frequency band
+    # break out by frequency band, but first de-mean
+    demean = lambda x: (x - x.mean())
+    lfp = lfp.apply(demean)
     print 'Filtering by frequency...'
     filters = ['delta', 'theta', 'alpha']
     allbands = dfbandlimit(lfp, filters)

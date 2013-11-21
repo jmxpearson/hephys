@@ -69,18 +69,20 @@ inflate_times = t_evt['inflate_time'].copy()
 inflate_times.sort()
 inflate_times = inflate_times.reset_index(drop=True)
 inflate_times = pd.DataFrame(inflate_times).reset_index()
-# chunks.to_csv('/home/jmp33/data/bartc/testchunks.csv')
-# t_evt['inflate_time'].to_csv('/home/jmp33/data/bartc/inftimes.csv')
 
 # load up R
 R = robjects.r
+R('source("helpers.R")')
 rdf = com.convert_to_r_dataframe(chunks)
 inft = com.convert_to_r_dataframe(inflate_times)
 
-R('source("helpers.R")')
+# make plot
+R("""pdf(file='~/Dropbox/hephys/media/figs/powraster.pdf', paper='USr', width=11, height=8.5)""")
+
 pp = R['rasterize'](rdf, inft)
-R.X11()
 R.plot(pp)
+
+R('dev.off()')
 
 ################ all channel traces ##########################
 dtup = 18, 1 
