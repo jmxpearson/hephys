@@ -56,30 +56,23 @@ plotroc <- function(perf) {
 }
 
 # make a raster plot of a time series
-rasterize <- function(df) {
-    df <- read.csv('~/data/bartc/testchunks.csv', header=TRUE)
-    it <- read.csv('~/data/bartc/inftimes.csv', header=FALSE, row.names=1)
-    it <- it[order(it$V2),]
-    it$index <- 1:nrow(it)
-
-
-    names(df)[-1] = 1:(ncol(df) - 1)
-    dd <- melt(df, id.vars=c("time"))
-    dd$variable = as.integer(dd$variable)
+rasterize <- function(df, an) {
 
     jet.colors <- colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan", "#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
 
-    titlestr = 'to be named'
-    plt <- ggplot(dd, aes(time, variable, fill=value))
-    
-    plt + geom_raster(interpolate=FALSE) + 
+    titlestr = 'Event-related power\n'
+    plt <- ggplot(df, aes(x=as.numeric(time), y=as.numeric(trial), 
+        fill=as.numeric(value)))
+
+    pp <- plt + geom_raster(interpolate=TRUE) + 
     scale_fill_gradientn(colours=jet.colors(7)) + 
     geom_vline(xintercept=0, show_guide=FALSE) + 
     labs(title = titlestr, x='\nTime (s)', y='Trial\n') + 
     scale_x_continuous(expand=c(0,0)) + 
     scale_y_continuous(expand=c(0,0)) + 
     theme_bw() + 
-    theme(plot.title = element_text(lineheight=1, size=36), axis.text=element_text(color='black', size=12), axis.title.x=element_text(size=20), axis.title.y=element_text(size=20) ) +
-    annotate('line', x=it$V2, y=it$index, color='white')
+    theme(plot.title = element_text(lineheight=1, size=28), axis.text=element_text(color='black', size=12), axis.title.x=element_text(size=20), axis.title.y=element_text(size=20) ) +
+    annotate('line', x=an[, 2], y=an[, 1], color='white')
 
+    return(pp)
 }

@@ -61,9 +61,23 @@ chunks = evtsplit(df, t_evt['start inflating'], Tpre, Tpost)
 
 # sort trials by inflate time
 sortord = np.argsort(t_evt['inflate_time']) + 1
-chunks = chunks[sortord]
-chunks.to_csv('/home/jmp33/data/bartc/testchunks.csv')
-t_evt['inflate_time'].to_csv('/home/jmp33/data/bartc/inftimes.csv')
+chunks = chunks[sortord].reset_index()
+chunks = pd.melt(chunks, id_vars=['time'])
+
+# make a dataframe of inflate times for plot annotation
+inflate_times = t_evt['inflate_time'].copy()
+inflate_times.sort()
+inflate_times = inflate_times.reset_index(drop=True)
+inflate_times = pd.DataFrame(inflate_times).reset_index()
+# chunks.to_csv('/home/jmp33/data/bartc/testchunks.csv')
+# t_evt['inflate_time'].to_csv('/home/jmp33/data/bartc/inftimes.csv')
 
 # load up R
-rdf = com.convert_to_r_matrix(chunks)
+R = robjects.r
+rdf = com.convert_to_r_dataframe(chunks)
+inft = com.convert_to_r_dataframe(inflate_times)
+
+R('source("helpers.R")')
+pp = R['rasterize'](rdf, inft)
+R.X11()
+R.plot(pp)
