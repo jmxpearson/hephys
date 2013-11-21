@@ -38,7 +38,7 @@ def dfdecimate(df, decfrac):
     for frac in decfrac:
         tindex = newdf.index[::frac]
         parts = [pd.DataFrame(decimate(aa[1], frac), columns=[aa[0]]) 
-        for aa in df.iteritems()]
+        for aa in newdf.iteritems()]
         newdf = pd.concat(parts, axis=1)
         newdf.index = tindex
         newdf.index.name = df.index.name
