@@ -32,14 +32,16 @@ def decimate(x, decfrac, axis=-1):
 def dfdecimate(df, decfrac):
     """
     Decimate a dataframe, handling indices and columns appropriately.
+    decfrac can be an iterable of successive decimations
     """
     df = pd.DataFrame(df)  # upcast from Series, if needed
-    tindex = df.index[::decfrac]
-    parts = [pd.DataFrame(decimate(aa[1], decfrac), columns=[aa[0]]) 
-    for aa in df.iteritems()]
-    newdf = pd.concat(parts, axis=1)
-    newdf.index = tindex
-    newdf.index.name = df.index.name
+    for frac in decfrac:
+        tindex = df.index[::frac]
+        parts = [pd.DataFrame(decimate(aa[1], frac), columns=[aa[0]]) 
+        for aa in df.iteritems()]
+        newdf = pd.concat(parts, axis=1)
+        newdf.index = tindex
+        newdf.index.name = df.index.name
     return newdf
 
 def binspikes(df, dt):

@@ -21,9 +21,8 @@ df = dfbandlimit(df, ['theta'])
 
 # decimate to 40 Hz effective sampling
 decfrac = (5, 5) 
-for dfrac in decfrac:
-    dt = dt * dfrac
-    df = dfdecimate(df, dfrac)
+dt *= np.product(decfrac)
+df = dfdecimate(df, decfrac)
 
 # instantaneous power
 df = df.apply(ssig.hilbert).apply(np.absolute) ** 2
@@ -93,8 +92,8 @@ df = df['voltage']
 df = df.unstack()
     
 # decimate to 40 Hz effective sampling
-decfrac = 5
-dt *= decfrac
+decfrac = (5, 5) 
+dt *= np.product(decfrac)
 df = dfdecimate(df, decfrac) 
 
 # bandpass filter
