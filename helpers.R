@@ -57,6 +57,8 @@ plotroc <- function(perf) {
 
 # make a raster plot of a time series
 rasterize <- function(df, an) {
+    # df is a dataframe to constitute the raster (time, trial)
+    # an is a (trial, time) dataframe of points to annotate
 
     jet.colors <- colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan", "#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
 
@@ -72,7 +74,22 @@ rasterize <- function(df, an) {
     scale_y_continuous(expand=c(0,0)) + 
     theme_bw() + 
     theme(plot.title = element_text(lineheight=1, size=28), axis.text=element_text(color='black', size=12), axis.title.x=element_text(size=20), axis.title.y=element_text(size=20) ) +
-    annotate('line', x=an[, 2], y=an[, 1], color='white')
+    annotate('line', x=an[, 2], y=an[, 1], color='white', size=1)
+
+    return(pp)
+}
+
+chanmeans <- function(df) {
+    # plot mean values for power in each channel
+    plt <- ggplot(df, aes(as.numeric(time), as.numeric(value)))
+
+    pp <- plt + 
+    geom_line(aes(color=as.factor(variable))) + 
+    scale_colour_hue(h=c(90, 180), guide=FALSE) + 
+    labs(x='\nTime From Stopping (s)', y='Normalized Channel Power\n') +
+    theme_bw() + 
+    theme(plot.title = element_text(lineheight=1, size=36), axis.text=element_text(color='black', size=12),
+        axis.title.x=element_text(size=20), axis.title.y=element_text(size=20))
 
     return(pp)
 }
