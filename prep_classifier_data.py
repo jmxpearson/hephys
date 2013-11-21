@@ -36,23 +36,14 @@ for rec in setlist.iterrows():
     # break out by frequency band
     print 'Filtering by frequency...'
     filters = ['delta', 'theta', 'alpha']
-    bands = [bandlimit(lfp, f) for f in filters]
-    allbands = pd.concat(bands, axis=1)
+    allbands = dfbandlimit(lfp, filters)
 
     # decimate data
     print 'Decimating...'
     decfrac = 5  # reduce from 200 Hz to 40 Hz sampling rate
     dt = dt * decfrac
-    tindex = tindex[::decfrac]
-    parts = [pd.DataFrame(decimate(aa[1], decfrac), columns=[aa[0]]) 
-    for aa in allbands.iteritems()]
-    allbands = pd.concat(parts, axis=1)
+    allbands = dfdecimate(allbands, decfrac)
     
-    # attend to labeling
-    bandpairs = zip(np.repeat(filters, nchan), allbands.columns)
-    bandnames = [b[0] + '.' + str(b[1]) for b in bandpairs]
-    allbands.columns = bandnames
-
     # get instantaneous power
     print 'Calculating power...'
     # could do the following with DataFrame.apply, but given how long
@@ -66,14 +57,14 @@ for rec in setlist.iterrows():
     allbands = pd.concat(parts, axis=1)
     allbands.index = tindex
     allbands.index.name = 'time'
-    allbands = allbands.apply(np.absolute)
+    allbands = allbands.apply(np.absolute) ** 2
 
     # handle censoring
     print 'Censoring...'
     excludes = get_censor(dbname, tindex, *dtup)
     if not excludes.empty:
         excludes = excludes[excludes.columns.intersection(lfp.columns)]
-        # can do something fancy later, but for now, take logical OR across all 
+        # can do something fancy later, but for now, take logical OR across all
         # channels to determine what we keep
         excl_vec = np.any(excludes.values, axis=1)
         allbands[excl_vec] = np.nan

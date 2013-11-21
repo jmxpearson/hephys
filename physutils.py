@@ -29,6 +29,19 @@ def decimate(x, decfrac, axis=-1):
     sl[axis] = slice(None, None, decfrac)
     return y[sl]
 
+def dfdecimate(df, decfrac):
+    """
+    Decimate a dataframe, handling indices and columns appropriately.
+    """
+    df = pd.DataFrame(df)  # upcast from Series, if needed
+    tindex = df.index[::decfrac]
+    parts = [pd.DataFrame(decimate(aa[1], decfrac), columns=[aa[0]]) 
+    for aa in df.iteritems()]
+    newdf = pd.concat(parts, axis=1)
+    newdf.index = tindex
+    newdf.index.name = df.index.name
+    return newdf
+
 def binspikes(df, dt):
     """
     Convert df, a Pandas dataframe of spike timestamps, to a binned
@@ -104,9 +117,24 @@ def bandlimit(df, band=(0.01, 120)):
         fband = band_dict[band]
 
     b, a = ssig.ellip(2, 0.1, 40, [2 * dt * f for f in fband])
-    # bp = ssig.lfilter(b, a, df.values, axis=0)
-    # return pd.DataFrame(bp, index=df.index, columns=[''])
-    return df.apply(lambda x: ssig.lfilter(b, a, x), raw=True)
+    return df.apply(lambda x: ssig.filtfilt(b, a, x), raw=True)
+
+def dfbandlimit(df, filters=[(0.01, 120)]):
+    """
+    Convenience function for bandlimiting data frames. Handles
+    indices and columns appropriately.
+    """
+    nchan = df.shape[1]
+    bands = [bandlimit(df, f) for f in filters]
+    allbands = pd.concat(bands, axis=1)
+    
+    # attend to labeling
+    bandpairs = zip(np.repeat(filters, nchan), allbands.columns)
+    bandnames = [b[0] + '.' + str(b[1]) for b in bandpairs]
+    allbands.columns = bandnames
+
+    return allbands
+
 
 def fetch(dbname, node, *args):
     """
@@ -131,11 +159,15 @@ def fetch_all_such(dbname, node, *args, **kwargs):
     # do really simple regex matching
     matches = [k for k in keys if glob in k]
 
-    parts = []
-    for m in matches:
-        parts.append(fetch(dbname, m))
+    if matches:
+        parts = []
+        for m in matches:
+            parts.append(fetch(dbname, m))
+        excl = pd.concat(parts)
+    else:
+        excl = pd.DataFrame([])
 
-    return pd.concat(parts)
+    return excl
 
 def get_censor(dbname, taxis, *args):
     """
@@ -146,7 +178,11 @@ def get_censor(dbname, taxis, *args):
     """
     
     # get censoring intervals, group by channel
-    censors = fetch_all_such(dbname, 'censor', *args).groupby('channel')
+    censors = fetch_all_such(dbname, 'censor', *args)
+    if not censors.empty:
+        censors = censors.groupby('channel')
+    else:
+        return censors
     
     # arrange start and stop times into linear sequence
     # (the extra pair of braces around the return value is to prevent

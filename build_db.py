@@ -76,7 +76,7 @@ def ImportCensor(ftup, datadir):
 
 def ImportEvents(ftup, datadir, behdir):
     pdir = 'patient' + str(ftup[0]).zfill(3)
-    fname = str(ftup[0]) + '.' + str(ftup[1]) + '.plx_events.mat' 
+    fname = str(ftup[0]) + '.' + str(ftup[1]) + '.plx_events.mat'
     fullname = datadir + pdir + '/' + fname
     behname = behdir + pdir + '/' + ftup[2]
 
@@ -143,7 +143,7 @@ def ImportEvents(ftup, datadir, behdir):
             'popped'], [1, 2, 3, 5, 4])
         for var in vlist:
             valid = pd.notnull(df[var[0]])
-            df[valid][var[0]] = evt[var[1]].round(3).squeeze()
+            df[var[0]][valid] = evt[var[1]].round(3).squeeze()
 
     # lastly, if we are missing control columns, make sure to add them
     # (important for getting schema correct on initial write)
