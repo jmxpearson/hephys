@@ -24,7 +24,7 @@ for rec in setlist.iterrows():
 
     # read in data
     print 'Reading LFP...'
-    dt = 1./200  # sampling rate in dataset
+    dt = 1./1000  # sampling rate in dataset
     lfp = fetch_all_such(dbname, 'lfp', *dtup, keys=dirlist)
     lfp = lfp.set_index(['time', 'channel'])
     lfp = lfp['voltage']
@@ -42,9 +42,10 @@ for rec in setlist.iterrows():
 
     # decimate data
     print 'Decimating...'
-    decfrac = 5  # reduce from 200 Hz to 40 Hz sampling rate
-    dt = dt * decfrac
-    allbands = dfdecimate(allbands, decfrac)
+    decfrac = (5, 5)  # reduce from 200 Hz to 40 Hz sampling rate
+    for dfrac in decfrac:
+        dt = dt * dfrac
+        allbands = dfdecimate(allbands, dfrac)
     
     # get instantaneous power
     print 'Calculating power...'

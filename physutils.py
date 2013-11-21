@@ -116,7 +116,9 @@ def bandlimit(df, band=(0.01, 120)):
     if isinstance(band, str):
         fband = band_dict[band]
 
-    b, a = ssig.ellip(2, 0.1, 40, [2 * dt * f for f in fband])
+    # b, a = ssig.ellip(2, 0.1, 40, [2 * dt * f for f in fband])
+    b, a = ssig.iirfilter(2, [2 * dt * f for f in fband], rp=0.1, rs=40,
+        ftype='ellip')
     return df.apply(lambda x: ssig.filtfilt(b, a, x), raw=True)
 
 def dfbandlimit(df, filters=[(0.01, 120)]):
@@ -124,6 +126,7 @@ def dfbandlimit(df, filters=[(0.01, 120)]):
     Convenience function for bandlimiting data frames. Handles
     indices and columns appropriately.
     """
+    df = pd.DataFrame(df)
     nchan = df.shape[1]
     bands = [bandlimit(df, f) for f in filters]
     allbands = pd.concat(bands, axis=1)
@@ -134,7 +137,6 @@ def dfbandlimit(df, filters=[(0.01, 120)]):
     allbands.columns = bandnames
 
     return allbands
-
 
 def fetch(dbname, node, *args):
     """

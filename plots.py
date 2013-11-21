@@ -11,32 +11,28 @@ dtup = 18, 1, 22
 
 # open data file
 dbname = '/home/jmp33/data/bartc/plexdata/bartc.hdf5'
-dt = 1./200
+dt = 1./1000
 
 # get lfp data
 df = fetch(dbname, 'lfp', *dtup).set_index('time')['voltage']
 
-# censor
-excludes = get_censor(dbname, df.index.values.astype('float64'), *dtup[:2])
-if not excludes.empty:
-    excl_vec = np.any(excludes.values, axis=1)
-    
-# decimate to 40 Hz effective sampling
-decfrac = 5
-dt *= decfrac
-df = dfdecimate(df, decfrac) 
-
-# smooth censoring region, too
-excl_vec = dfdecimate(excl_vec.astype('int'), decfrac) > 0.8
-
 # bandpass filter
 df = dfbandlimit(df, ['theta'])
+
+# decimate to 40 Hz effective sampling
+decfrac = (5, 5) 
+for dfrac in decfrac:
+    dt = dt * dfrac
+    df = dfdecimate(df, dfrac)
 
 # instantaneous power
 df = df.apply(ssig.hilbert).apply(np.absolute) ** 2
 
 # remove censored regions
-df[excl_vec] = np.nan
+excludes = get_censor(dbname, df.index.values.astype('float64'), *dtup[:2])
+if not excludes.empty:
+    excl_vec = np.any(excludes.values, axis=1)
+    df[excl_vec] = np.nan
 
 # rolling smooth
 Twin = 0.1  # size of window in s
@@ -89,12 +85,12 @@ dtup = 18, 1
 
 # open data file
 dbname = '/home/jmp33/data/bartc/plexdata/bartc.hdf5'
-dt = 1./200
+dt = 1./1000
 
 # get lfp data
 df = fetch_all_such(dbname, 'lfp', *dtup).set_index(['time', 'channel'])
 df = df['voltage']
-df.unstack()
+df = df.unstack()
     
 # decimate to 40 Hz effective sampling
 decfrac = 5

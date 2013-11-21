@@ -66,8 +66,8 @@ rasterize <- function(df, an) {
     plt <- ggplot(df, aes(x=as.numeric(time), y=as.numeric(trial), 
         fill=as.numeric(value)))
 
-    pp <- plt + geom_raster(interpolate=TRUE) + 
-    scale_fill_gradientn(colours=jet.colors(7)) + 
+    pp <- plt + geom_raster() + 
+    scale_fill_gradientn(colours=jet.colors(7), limits=c(-70, 0)) + 
     geom_vline(xintercept=0, show_guide=FALSE, size=1) + 
     labs(title = titlestr, x='\nTime (s)', y='Trial\n') + 
     scale_x_continuous(expand=c(0,0)) + 
