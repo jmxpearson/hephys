@@ -34,9 +34,9 @@ def dfdecimate(df, decfrac):
     Decimate a dataframe, handling indices and columns appropriately.
     decfrac can be an iterable of successive decimations
     """
-    df = pd.DataFrame(df)  # upcast from Series, if needed
+    newdf = pd.DataFrame(df)  # upcast from Series, if needed
     for frac in decfrac:
-        tindex = df.index[::frac]
+        tindex = newdf.index[::frac]
         parts = [pd.DataFrame(decimate(aa[1], frac), columns=[aa[0]]) 
         for aa in df.iteritems()]
         newdf = pd.concat(parts, axis=1)
