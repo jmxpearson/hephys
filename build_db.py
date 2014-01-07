@@ -2,7 +2,7 @@ import h5py
 import pandas as pd
 import scipy.io as sio
 import numpy as np
-from physutils import make_path
+from physutils import make_path, decimate
 
 def write_to_db(dbname, tblname, df, **kwargs):
     df.to_hdf(dbname, tblname, append=True)
@@ -46,8 +46,8 @@ def import_lfp(ftup, datadir):
     sr = dset['srlfp'].value.squeeze()
 
     vv = dat
-    # vv = decimate(dat, 5)  # decimate data to 200 Hz
-    # sr = sr / 5;
+    vv = decimate(dat, 5)  # decimate data to 200 Hz
+    sr = sr / 5;
     dt = (1. / sr).round(3)
 
     times = (np.arange(0, vv.size) * dt).round(3).squeeze()

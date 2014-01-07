@@ -156,8 +156,6 @@ def fetch_metadata(dbname, node, *args):
     fobj = h5py.File(dbname, 'a')
     return dict(fobj[target].attrs)
 
-
-
 def fetch_all_such(dbname, node, *args, **kwargs):
     """
     Given an incomplete specification in args, get all datasets consistent
