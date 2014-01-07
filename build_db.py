@@ -7,6 +7,11 @@ from physutils import make_path
 def write_to_db(dbname, tblname, df, **kwargs):
     df.to_hdf(dbname, tblname, append=True)
 
+def add_metadata(dbname, tblname, **kwargs):
+    fobj = h5py.File(dbname, 'a')
+    for k in kwargs:
+        fobj[tblname].attrs[k] = kwargs[k]
+
 def import_spikes(ftup, datadir):
     pdir = 'patient' + str(ftup[0]).zfill(3)
     fname = ('times_' + str(ftup[0]) + '.' + str(ftup[1]) + '.plx' + 
@@ -53,6 +58,7 @@ def import_lfp(ftup, datadir):
  
     target = 'lfp/' + make_path(*ftup) 
     write_to_db(datadir + 'bartc.hdf5', target, df)
+    add_metadata(datadir + 'bartc.hdf', target, sr=sr)
 
 def import_censor(ftup, datadir):
     pdir = 'patient' + str(ftup[0]).zfill(3)

@@ -1,3 +1,4 @@
+import h5py
 import numpy as np
 import pandas as pd
 import pandas.io.pytables as pdtbl
@@ -147,6 +148,15 @@ def fetch(dbname, node, *args):
     """
     target = node + '/' + make_path(*args)
     return pd.read_hdf(dbname, target)
+
+def fetch_metadata(dbname, node, *args):
+    # have to get metadata this way because we didn't store it via pandas
+    # (which currently has no support for dataframe metadata)
+    target = node + '/' + make_path(*args)
+    fobj = h5py.File(dbname, 'a')
+    return dict(fobj[target].attrs)
+
+
 
 def fetch_all_such(dbname, node, *args, **kwargs):
     """

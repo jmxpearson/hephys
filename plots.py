@@ -11,10 +11,12 @@ dtup = 18, 1, 22
 
 # open data file
 dbname = '/home/jmp33/data/bartc/plexdata/bartc.hdf5'
-dt = 1./1000
 
 # get lfp data
 df = fetch(dbname, 'lfp', *dtup).set_index('time')['voltage']
+meta = fetch_metadata(dbname, 'lfp', *dtup)
+sr = meta.get(sr, 1000.)  # default to 1 kHz if no metadata
+dt = (1. / sr).round(3)
 
 # bandpass filter
 df = dfbandlimit(df, ['theta'])
