@@ -22,7 +22,7 @@ These files perform analysis on electrophysiology data taken while subjects perf
 
 ### Dependencies:
 
-* Python: NumPy, SciPy, Pandas, h5py (for reading Matlab files), pytables, warnings, rpy2 (for calling R).
+* Python: NumPy, SciPy, Pandas, h5py (for reading Matlab files), pytables (via Pandas), warnings, rpy2 (for calling R).
 
 * R: glmnet, ggplot2, reshape.
 
