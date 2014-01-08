@@ -36,6 +36,11 @@ def dfdecimate(df, decfrac):
     decfrac can be an iterable of successive decimations
     """
     newdf = pd.DataFrame(df)  # upcast from Series, if needed
+
+    # if we passed an int, make it a tuple
+    if isinstance(decfrac, int):
+        decfrac = (decfrac,)
+        
     for frac in decfrac:
         tindex = newdf.index[::frac]
         parts = [pd.DataFrame(decimate(aa[1], frac), columns=[aa[0]]) 
