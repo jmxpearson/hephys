@@ -14,6 +14,8 @@ As per Pandas convention, these should return new dataframes.
 """
 
 import physutils
+from scipy.signal import hilbert
+from numpy import absolute
 
 class LFPset(object):
     def __init__(self, dataframe, sr=1000):
@@ -47,6 +49,11 @@ class LFPset(object):
         newdf = self.dataframe.apply(zsc)
         return LFPset(newdf, self.sr)
 
+    def instpwr(self):
+        newdf = self.dataframe.apply(hilbert, raw=True)
+        newdf = newdf.apply(absolute) ** 2
+        return LFPset(newdf, self.sr)
+
 def fetch_LFP(dbname, *tup):
     """ 
     Given a database and a tuple (tup), return an LFPset object.
@@ -60,7 +67,8 @@ def fetch_LFP(dbname, *tup):
     lfp.index = lfp.index.values.astype('float64')
     lfp.index.name = 'time'
 
-    sr = lfp.index[1] - lfp.index[0]
+    dt = lfp.index[1] - lfp.index[0]
+    sr = 1. / dt
 
     return LFPset(lfp, sr)    
 
