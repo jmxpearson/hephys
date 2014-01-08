@@ -60,7 +60,7 @@ def import_lfp(ftup, datadir):
  
     target = 'lfp/' + make_path(*ftup) 
     write_to_db(datadir + 'bartc.hdf5', target, df)
-    add_metadata(datadir + 'bartc.hdf5', target, sr=sr)
+    # add_metadata(datadir + 'bartc.hdf5', target, sr=sr)
 
 def import_censor(ftup, datadir):
     pdir = 'patient' + str(ftup[0]).zfill(3)
