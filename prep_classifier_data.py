@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import scipy.signal as ssig
 from physutils import *
+from physclasses import *
 
 # define some useful numbers
 np.random.seed(12345)
@@ -10,11 +11,48 @@ np.random.seed(12345)
 dbname = '/home/jmp33/data/bartc/plexdata/bartc.hdf5'
 
 # first, get a list of lfp channels
-setlist = pd.read_hdf(dbname, '/meta/lfplist')[['patient', 'dataset']]
-setlist = setlist.drop_duplicates()
-dirlist = pdtbl.HDFStore(dbname).keys()
+setlist = pd.read_hdf(dbname, '/meta/lfplist')
 
-# iterate over entries:
+# group by (patient, dataset) entries:
+groups = setlist.groupby(['patient', 'dataset'])
+
+# iterate over groups
+for name, grp in groups:
+
+    # iterate over channels within groups
+    for dtup in grp:
+
+        print dtup
+
+        # read in data
+        print 'Reading LFP...'
+        lfp = fetch_LFP(dbname, *dtup)
+
+        # de-mean
+        print 'Removing mean...'
+        lfp = lfp.demean()
+
+        # break out by frequency bands
+        print 'Filtering by frequency...'
+        filters = ['delta', 'theta', 'alpha']
+        allbands = lfp.bandlimit(filters)
+
+        # decimate down to 40 Hz
+        print 'Decimating...'
+        allbands = allbands.decimate(5)
+
+        # get instantaneous power
+        print 'Calculating power...'
+        allbands = allbands.instpwr()
+
+        # handle censoring
+        print 'Censoring...'
+        allbands = allbands.censor()
+
+        # standardize per channel
+        print 'Standardizing regressors...'
+        allbands = allbands.zscore()
+
 for rec in setlist.iterrows():
 
     # get data indices
