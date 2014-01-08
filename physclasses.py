@@ -14,8 +14,8 @@ As per Pandas convention, these should return new dataframes.
 """
 
 import physutils
+import numpy as np
 from scipy.signal import hilbert
-from numpy import absolute
 
 class LFPset(object):
     def __init__(self, dataframe, meta=None):
@@ -52,8 +52,23 @@ class LFPset(object):
 
     def instpwr(self):
         newdf = self.dataframe.apply(hilbert, raw=True)
-        newdf = newdf.apply(absolute) ** 2
+        newdf = newdf.apply(np.absolute) ** 2
         return LFPset(newdf, self.meta)
+
+    def censor(self):
+        excludes = physutils.get_censor(
+            self.meta['dbname'], self.dataframe.index, *self.meta['tuple'])
+        if not excludes.empty:
+            excludes = excludes[excludes.columns.intersection(
+                self.dataframe.columns)]
+            # can do something fancy later, but for now, take logical OR across all
+            # channels to determine what we keep
+            excl_vec = np.any(excludes.values, axis=1)
+            newdf = self.dataframe
+            newdf[excl_vec] = np.nan
+            return LFPset(newdf, self.meta)
+        else:
+            return self
 
 def fetch_LFP(dbname, *tup):
     """ 
@@ -64,13 +79,10 @@ def fetch_LFP(dbname, *tup):
     lfp = lfp.set_index(['time', 'channel'])
     lfp = lfp['voltage']
     lfp = lfp.unstack()
-    # the following is a kludge because the dtype is set to 'O' by the multi-index
-    lfp.index = lfp.index.values.astype('float64')
-    lfp.index.name = 'time'
-
+    
     dt = lfp.index[1] - lfp.index[0]
     sr = 1. / dt
-    meta = {'tuple': tup, 'sr': sr}
+    meta = {'dbname': dbname, 'tuple': tup, 'sr': sr}
 
     return LFPset(lfp, meta)    
 

@@ -138,7 +138,7 @@ def dfbandlimit(df, filters=None):
     """
     if filters is None:
         return df
-    
+
     df = pd.DataFrame(df)
     nchan = df.shape[1]
     bands = [bandlimit(df, f) for f in filters]
@@ -202,6 +202,11 @@ def get_censor(dbname, taxis, *args):
     Assumes timestamp range equal to that of lfp.
     """
     
+    # make sure tindex is of type float64
+    ##### should be able to remove when pandas is upgraded to 0.13, which 
+    ##### allows for float64 indices
+    taxis = pd.Series(taxis.values.astype('float64'))
+
     # get censoring intervals, group by channel
     censors = fetch_all_such(dbname, 'censor', *args)
     if not censors.empty:
