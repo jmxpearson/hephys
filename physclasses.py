@@ -39,11 +39,13 @@ class LFPset(object):
 
     def demean(self):
         dmn = lambda x: (x - x.mean())
-        self.dataframe = self.dataframe.apply(dmn)
+        newdf = self.dataframe.apply(dmn)
+        return LFPset(newdf, self.sr)
 
     def zscore(self):
         zsc = lambda x: (x - x.mean()) / x.std()
-        self.dataframe = self.dataframe.apply(zsc)
+        newdf = self.dataframe.apply(zsc)
+        return LFPset(newdf, self.sr)
 
 def fetch_LFP(dbname, *tup):
     """ 
