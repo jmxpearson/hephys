@@ -18,9 +18,9 @@ from scipy.signal import hilbert
 from numpy import absolute
 
 class LFPset(object):
-    def __init__(self, dataframe, sr=1000):
+    def __init__(self, dataframe, meta=None):
         self.dataframe = dataframe
-        self.sr = sr  # sampling rate in Hz
+        self.meta = meta  # dict of metadata 
 
     def __getattr__(self, name):
         return getattr(self.dataframe, name)
@@ -33,26 +33,27 @@ class LFPset(object):
 
     def decimate(self, decfrac):
         newdf = physutils.dfdecimate(self.dataframe, decfrac)
-        return LFPset(newdf, self.sr / decfrac)
+        self.meta['sr'] = self.meta.get('sr', None) / decfrac
+        return LFPset(newdf, self.meta)
 
     def bandlimit(self, *args):
         newdf = physutils.dfbandlimit(self.dataframe, *args)
-        return LFPset(newdf, self.sr)
+        return LFPset(newdf, self.meta)
 
     def demean(self):
         dmn = lambda x: (x - x.mean())
         newdf = self.dataframe.apply(dmn)
-        return LFPset(newdf, self.sr)
+        return LFPset(newdf, self.meta)
 
     def zscore(self):
         zsc = lambda x: (x - x.mean()) / x.std()
         newdf = self.dataframe.apply(zsc)
-        return LFPset(newdf, self.sr)
+        return LFPset(newdf, self.meta)
 
     def instpwr(self):
         newdf = self.dataframe.apply(hilbert, raw=True)
         newdf = newdf.apply(absolute) ** 2
-        return LFPset(newdf, self.sr)
+        return LFPset(newdf, self.meta)
 
 def fetch_LFP(dbname, *tup):
     """ 
@@ -69,6 +70,7 @@ def fetch_LFP(dbname, *tup):
 
     dt = lfp.index[1] - lfp.index[0]
     sr = 1. / dt
+    meta = {'tuple': tup, 'sr': sr}
 
-    return LFPset(lfp, sr)    
+    return LFPset(lfp, meta)    
 
