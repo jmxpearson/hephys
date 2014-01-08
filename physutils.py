@@ -131,11 +131,14 @@ def bandlimit(df, band=(0.01, 120)):
         ftype='ellip')
     return df.apply(lambda x: ssig.filtfilt(b, a, x), raw=True)
 
-def dfbandlimit(df, filters=[(0.01, 120)]):
+def dfbandlimit(df, filters=None):
     """
     Convenience function for bandlimiting data frames. Handles
     indices and columns appropriately.
     """
+    if filters is None:
+        return df
+    
     df = pd.DataFrame(df)
     nchan = df.shape[1]
     bands = [bandlimit(df, f) for f in filters]
