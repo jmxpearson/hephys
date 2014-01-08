@@ -47,8 +47,9 @@ def import_lfp(ftup, datadir):
     sr = dset['srlfp'].value.squeeze()
 
     vv = dat
-    vv = decimate(dat, 5)  # decimate data to 200 Hz
-    sr = sr / 5;
+    decfrac = 5.0
+    vv = decimate(dat, decfrac)  # decimate data to 200 Hz
+    sr = sr / decfrac;
     dt = (1. / sr).round(3)
 
     times = (np.arange(0, vv.size) * dt).round(3).squeeze()
