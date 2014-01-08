@@ -34,5 +34,23 @@ class LFPset(object):
         return LFPset(newdf, self.sr / decfrac)
 
     def bandlimit(self, *args):
-        newdf = physutils.bandlimit(self.dataframe, *args)
+        newdf = physutils.dfbandlimit(self.dataframe, *args)
         return LFPset(newdf, self.sr)
+
+def fetch_LFP(dbname, *tup):
+    """ 
+    Given a database and a tuple (tup), return an LFPset object.
+    """
+
+    lfp = physutils.fetch(dbname, 'lfp', *tup)
+    lfp = lfp.set_index(['time', 'channel'])
+    lfp = lfp['voltage']
+    lfp = lfp.unstack()
+    # the following is a kludge because the dtype is set to 'O' by the multi-index
+    lfp.index = lfp.index.values.astype('float64')
+    lfp.index.name = 'time'
+
+    sr = lfp.index[1] - lfp.index[0]
+
+    return LFPset(lfp, sr)    
+

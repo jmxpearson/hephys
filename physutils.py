@@ -123,6 +123,8 @@ def bandlimit(df, band=(0.01, 120)):
     # if band isn't a two-element sequence, it should be a string
     if isinstance(band, str):
         fband = band_dict[band]
+    else:
+        fband = band
 
     # b, a = ssig.ellip(2, 0.1, 40, [2 * dt * f for f in fband])
     b, a = ssig.iirfilter(2, [2 * dt * f for f in fband], rp=0.1, rs=40,
@@ -140,7 +142,8 @@ def dfbandlimit(df, filters=[(0.01, 120)]):
     allbands = pd.concat(bands, axis=1)
     
     # attend to labeling
-    bandpairs = zip(np.repeat(filters, nchan), allbands.columns)
+    fstr = map(str, filters)
+    bandpairs = zip(np.repeat(fstr, nchan), allbands.columns)
     bandnames = [b[0] + '.' + str(b[1]) for b in bandpairs]
     allbands.columns = bandnames
 
@@ -158,8 +161,10 @@ def fetch_metadata(dbname, node, *args):
     # have to get metadata this way because we didn't store it via pandas
     # (which currently has no support for dataframe metadata)
     target = node + '/' + make_path(*args)
-    fobj = h5py.File(dbname, 'a')
-    return dict(fobj[target].attrs)
+    fobj = h5py.File(dbname, 'r')
+    attdict = dict(fobj[target].attrs)
+    fobj.close()
+    return attdict
 
 def fetch_all_such(dbname, node, *args, **kwargs):
     """

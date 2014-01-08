@@ -15,7 +15,7 @@ dbname = '/home/jmp33/data/bartc/plexdata/bartc.hdf5'
 # get lfp data
 df = fetch(dbname, 'lfp', *dtup).set_index('time')['voltage']
 meta = fetch_metadata(dbname, 'lfp', *dtup)
-sr = meta.get(sr, 1000.)  # default to 1 kHz if no metadata
+sr = meta.get('sr', 1000.)  # default to 1 kHz if no metadata
 dt = (1. / sr).round(3)
 
 # bandpass filter
