@@ -37,6 +37,14 @@ class LFPset(object):
         newdf = physutils.dfbandlimit(self.dataframe, *args)
         return LFPset(newdf, self.sr)
 
+    def demean(self):
+        dmn = lambda x: (x - x.mean())
+        self.dataframe = self.dataframe.apply(dmn)
+
+    def zscore(self):
+        zsc = lambda x: (x - x.mean()) / x.std()
+        self.dataframe = self.dataframe.apply(zsc)
+
 def fetch_LFP(dbname, *tup):
     """ 
     Given a database and a tuple (tup), return an LFPset object.
