@@ -22,7 +22,7 @@ def decimate(x, decfrac, axis=-1):
         warnings.warn(wrnstr)
 
     n = 8
-    b, a = ssig.filter_design.cheby1(n, 0.05, 0.8/decfrac)
+    b, a = ssig.filter_design.cheby1(n, 0.05, 0.8 / decfrac)
 
     y = ssig.filtfilt(b, a, x, axis=axis)
 
@@ -40,7 +40,7 @@ def dfdecimate(df, decfrac):
     # if we passed an int, make it a tuple
     if isinstance(decfrac, int):
         decfrac = (decfrac,)
-        
+
     for frac in decfrac:
         tindex = newdf.index[::frac]
         parts = [pd.DataFrame(decimate(aa[1], frac), columns=[aa[0]]) 
