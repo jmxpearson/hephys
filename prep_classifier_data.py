@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import scipy.signal as ssig
 from physutils import *
 from physclasses import *
 
@@ -19,8 +18,12 @@ groups = setlist.groupby(['patient', 'dataset'])
 # iterate over groups
 for name, grp in groups:
 
+    allchans = []
+
     # iterate over channels within groups
-    for dtup in grp:
+    for ind, series in grp.iterrows():
+
+        dtup = tuple(series.values)
 
         print dtup
 
@@ -35,93 +38,44 @@ for name, grp in groups:
         # break out by frequency bands
         print 'Filtering by frequency...'
         filters = ['delta', 'theta', 'alpha']
-        allbands = lfp.bandlimit(filters)
+        banded = lfp.bandlimit(filters)
 
         # decimate down to 40 Hz
         print 'Decimating...'
-        allbands = allbands.decimate(5)
+        banded = banded.decimate(5)
 
         # get instantaneous power
         print 'Calculating power...'
-        allbands = allbands.instpwr()
+        banded = banded.instpwr()
 
         # handle censoring
         print 'Censoring...'
-        allbands = allbands.censor()
+        banded = banded.censor()
 
         # standardize per channel
         print 'Standardizing regressors...'
-        allbands = allbands.zscore()
+        banded = banded.zscore()
 
-for rec in setlist.iterrows():
 
-    # get data indices
-    dtup = rec[1].values
-    # dtup = setlist.iloc[14,:].values
-    print dtup
+        # append to whole dataset
+        allchans.append(banded)
 
-    # read in data
-    print 'Reading LFP...'
-    dt = 1./1000  # sampling rate in dataset
-    lfp = fetch_all_such(dbname, 'lfp', *dtup, keys=dirlist)
-    lfp = lfp.set_index(['time', 'channel'])
-    lfp = lfp['voltage']
-    lfp = lfp.unstack()
-    nchan = lfp.shape[1]
-    # the following is a kludge because the dtype is set to 'O' by the multi-index
-    tindex = lfp.index.values.astype('float64')
-
-    # break out by frequency band, but first de-mean
-    demean = lambda x: (x - x.mean())
-    lfp = lfp.apply(demean)
-    print 'Filtering by frequency...'
-    filters = ['delta', 'theta', 'alpha']
-    allbands = dfbandlimit(lfp, filters)
-
-    # decimate data
-    print 'Decimating...'
-    decfrac = (5, 5)  # reduce from 200 Hz to 40 Hz sampling rate
-    for dfrac in decfrac:
-        dt = dt * dfrac
-        allbands = dfdecimate(allbands, dfrac)
-    
-    # get instantaneous power
-    print 'Calculating power...'
-    # could do the following with DataFrame.apply, but given how long
-    # it can take, preferred option is to use the print statement to
-    # show progress
-    parts = []
-    for aa in allbands.iteritems():
-        if nchan > 1:
-            print aa[0]
-        parts.append(pd.DataFrame(ssig.hilbert(aa[1]), columns=[aa[0]]))
-    allbands = pd.concat(parts, axis=1)
-    allbands.index = tindex
-    allbands.index.name = 'time'
-    allbands = allbands.apply(np.absolute) ** 2
-
-    # handle censoring
-    print 'Censoring...'
-    excludes = get_censor(dbname, tindex, *dtup)
-    if not excludes.empty:
-        excludes = excludes[excludes.columns.intersection(lfp.columns)]
-        # can do something fancy later, but for now, take logical OR across all
-        # channels to determine what we keep
-        excl_vec = np.any(excludes.values, axis=1)
-        allbands[excl_vec] = np.nan
-
-    # standardize per channel
-    print 'Standardizing regressors...'
-    zscore = lambda x: (x - x.mean()) / x.std()
-    allbands = allbands.apply(zscore)
+    # concatenate data from all channels
+    print 'Merging channels...'
+    groupdata = pd.concat(allchans)
 
     # specify peri-event times
+    dt = 1. / np.array(banded.meta['sr']).round(3)  # dt in ms
     Tpre = 2  # time relative to event to start
     Tpost = 1.5  # time following event to exclude
 
+    # running average of power
+    print 'Running mean...'
+    meanpwr = pd.rolling_mean(groupdata, np.ceil(Tpre / dt), min_periods=1)
+
     # grab events (successful stops = true positives for training)
-    print 'Fetching events...'
-    evt = fetch(dbname, 'events', *dtup)['banked'].dropna()
+    print 'Fetching events (true positives)...'
+    evt = fetch(dbname, 'events', *dtup[:2])['banked'].dropna()
     evt = np.around(evt / dt) * dt  # round to nearest dt
     # extend with nearby times
     truepos = (pd.DataFrame(pd.concat([evt, evt - 0.5, evt - 1.0]), 
@@ -130,7 +84,7 @@ for rec in setlist.iterrows():
 
     # grab random timepoints (true negatives in training set)
     print 'Generating true negatives...'
-    maxT = np.max(allbands.index.values)
+    maxT = np.max(groupdata.index.values)
     # make some candidate random times
     Nrand = 3000
     tcands = np.random.rand(Nrand) * (maxT - Tpre) + Tpre
@@ -160,8 +114,8 @@ for rec in setlist.iterrows():
     allevt = allevt.set_index('time')
 
     # get running average estimate of power at each timepoint of interest
-    print 'Running mean...'
-    meanpwr = pd.rolling_mean(allbands, np.ceil(Tpre / dt), min_periods=1)
+    print 'Grabbing data for each event...'
+    meanpwr = pd.rolling_mean(groupdata, np.ceil(Tpre / dt), min_periods=1)
     tset = pd.concat([allevt, meanpwr], axis=1, join='inner')
     tset = tset.dropna()  # can't send glmnet any row with a NaN
 
