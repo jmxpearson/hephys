@@ -86,3 +86,18 @@ def fetch_LFP(dbname, *tup):
 
     return LFPset(lfp, meta)    
 
+def fetch_all_such_LFP(dbname, *tup, **kwargs):
+    """ 
+    Given a database and a tuple (tup), return an LFPset object.
+    """
+
+    lfp = physutils.fetch_all_such(dbname, 'lfp', *tup, **kwargs)
+    lfp = lfp.set_index(['time', 'channel'])
+    lfp = lfp['voltage']
+    lfp = lfp.unstack()
+    
+    dt = lfp.index[1] - lfp.index[0]
+    sr = 1. / dt
+    meta = {'dbname': dbname, 'tuple': tup, 'sr': sr}
+
+    return LFPset(lfp, meta)
