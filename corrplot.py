@@ -20,12 +20,21 @@ df = df.decimate(5)
 # first, try to just look at overall correlations
 # if the similarity matrix is correlation, the corresponding distance 
 # measure is indeed mean-squared distance 
-from scipy.spatial.distance import pdist
+from scipy.spatial.distance import pdist, squareform
 # have to transpose because pdist expects each ROW an observation:
 Dmat = pdist(df.values.T)  
 import scipy.cluster.hierarchy as clust
 dendro = clust.linkage(Dmat)
 
-#plot it:
+# plot it:
 tree = clust.dendrogram(dendro)
+plt.show()
+
+# multidimensional scaling
+from sklearn import manifold
+seed = 12345
+mds = manifold.MDS(n_components=2, max_iter=3000, eps=1e-9, random_state=seed,
+                   dissimilarity="precomputed", n_jobs=1)
+pos = mds.fit_transform(squareform(Dmat))
+plt.scatter(pos[:, 0], pos[:, 1])
 plt.show()
