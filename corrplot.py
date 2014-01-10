@@ -11,12 +11,13 @@ from sklearn import manifold
 import os
 
 # pick a dataset
-dtup = 17, 2 
+dtup = 23, 1 
 
 # open data file
 dbname = '/home/jmp33/data/bartc/plexdata/bartc.hdf5'
 
 # get lfp data, normalize, downsample
+print 'Fetching data...'
 df = fetch_all_such_LFP(dbname, *dtup)
 df = df.zscore()
 df = df.decimate(5)
@@ -25,6 +26,7 @@ df = df.decimate(5)
 # if the similarity matrix is correlation, the corresponding distance 
 # measure is indeed mean-squared distance 
 # have to transpose because pdist expects each ROW an observation:
+print 'Calculating dendrogram...'
 Dmat = pdist(df.values.T)  
 dendro = clust.linkage(Dmat)
 
