@@ -13,7 +13,7 @@ def add_metadata(dbname, tblname, **kwargs):
         fobj[tblname].attrs[k] = kwargs[k]
     fobj.close()
 
-def import_spikes(ftup, datadir):
+def import_spikes(ftup, datadir, outfile):
     pdir = 'patient' + str(ftup[0]).zfill(3)
     fname = ('times_' + str(ftup[0]) + '.' + str(ftup[1]) + '.plx' + 
         str(ftup[2]) + '.mat')
@@ -36,9 +36,9 @@ def import_spikes(ftup, datadir):
     df = pd.DataFrame(ddict)
 
     target = 'spikes/' + make_path(*ftup)
-    write_to_db(datadir + 'bartc.hdf5', target, df)
+    write_to_db(datadir + outfile, target, df)
 
-def import_lfp(ftup, datadir):
+def import_lfp(ftup, datadir, outfile):
     pdir = 'patient' + str(ftup[0]).zfill(3)
     fname = str(ftup[0]) + '.' + str(ftup[1]) + '.plx' + str(ftup[2]) + '.mat'
     fullname = datadir + pdir + '/' + fname
@@ -59,10 +59,9 @@ def import_lfp(ftup, datadir):
     df = pd.DataFrame(ddict)
  
     target = 'lfp/' + make_path(*ftup) 
-    write_to_db(datadir + 'bartc.hdf5', target, df)
-    # add_metadata(datadir + 'bartc.hdf5', target, sr=sr)
+    write_to_db(datadir + outfile, target, df)
 
-def import_censor(ftup, datadir):
+def import_censor(ftup, datadir, outfile):
     pdir = 'patient' + str(ftup[0]).zfill(3)
     fname = (str(ftup[0]) + '.' + str(ftup[1]) + '.plx' + str(ftup[2]) + 
         '_censoring.mat')
@@ -81,9 +80,9 @@ def import_censor(ftup, datadir):
         df = pd.DataFrame(ddict)
      
         target = 'censor/' + make_path(*ftup) 
-        write_to_db(datadir + 'bartc.hdf5', target, df)
+        write_to_db(datadir + outfile, target, df)
 
-def import_events(ftup, datadir, behdir):
+def import_events(ftup, datadir, behdir, outfile):
     pdir = 'patient' + str(ftup[0]).zfill(3)
     fname = str(ftup[0]) + '.' + str(ftup[1]) + '.plx_events.mat'
     fullname = datadir + pdir + '/' + fname
@@ -166,7 +165,7 @@ def import_events(ftup, datadir, behdir):
     # do some final tidying
     df = df[df['result'] != 'aborted']  # get rid of aborts
     target = 'events/' + make_path(*ftup[:-1]) 
-    write_to_db(datadir + 'bartc.hdf5', target, df)
+    write_to_db(datadir + outfile, target, df)
 
 
 if __name__ == '__main__':
@@ -178,6 +177,7 @@ if __name__ == '__main__':
     lfpfile = '/home/jmp33/code/hephys/lfp_channel_file.csv'
     chanfile = '/home/jmp33/code/hephys/valid_channels.csv'
     behfile = '/home/jmp33/code/hephys/behavior_file_map.csv'
+    outfile = 'bartc.hdf5'
 
     ############### events #################        
     # get all (patient, dataset) tuples from already loaded spikes
@@ -194,7 +194,7 @@ if __name__ == '__main__':
 
     for ftup in tuplist:
         print ftup
-        import_events(ftup, ddir, bdir)
+        import_events(ftup, ddir, bdir, outfile)
 
     ############### censoring #################
     # load censoring data
@@ -207,13 +207,13 @@ if __name__ == '__main__':
         for line in infile:
             tuplist.append(tuple(map(int, line.split(','))))
 
-    write_to_db(ddir + 'bartc.hdf5', 'meta/censlist', 
+    write_to_db(ddir + outfile, 'meta/censlist', 
         pd.DataFrame(tuplist, columns=['patient', 'dataset', 'channel']))
 
     # iterate through files, loading data
     for ftup in tuplist:
         print ftup
-        import_censor(ftup, ddir)
+        import_censor(ftup, ddir, outfile)
 
     ############### spikes #################
     # get list of tuples with valid channels
@@ -223,14 +223,14 @@ if __name__ == '__main__':
         for line in infile:
             tuplist.append(tuple(map(int, line.split(','))))
 
-    write_to_db(ddir + 'bartc.hdf5', 'meta/spklist', 
+    write_to_db(ddir + outfile, 'meta/spklist', 
         pd.DataFrame(tuplist, 
             columns=['patient', 'dataset', 'channel', 'unit']))
 
     # iterate through files, loading data
     for ftup in tuplist:
         print ftup
-        import_spikes(ftup, ddir)
+        import_spikes(ftup, ddir, outfile)
 
     ############### lfp #################
     # load lfp data
@@ -240,10 +240,10 @@ if __name__ == '__main__':
         for line in infile:
             tuplist.append(tuple(map(int, line.split(','))))
 
-    write_to_db(ddir + 'bartc.hdf5', 'meta/lfplist', 
+    write_to_db(ddir + outfile, 'meta/lfplist', 
         pd.DataFrame(tuplist, columns=['patient', 'dataset', 'channel']))
 
     # iterate through files, loading data
     for ftup in tuplist:
         print ftup
-        import_lfp(ftup, ddir)
+        import_lfp(ftup, ddir, outfile)
