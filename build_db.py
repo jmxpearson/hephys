@@ -176,15 +176,6 @@ class DataSets:
         df['patient'] = ftup[0]
         df['dataset'] = ftup[1]
 
-        # lastly, if we are missing control columns, make sure to add them
-        # (important for getting schema correct on initial write)
-        if not 'is_control' in df.keys():
-            df['is_control'] = np.nan
-        else:
-            df['is_control'] = df['is_control'].astype('float64')
-        if not 'ctrltime' in df.keys():
-            df['ctrltime'] = np.nan
-        
         # do some final tidying
         df = df[df['result'] != 'aborted']  # get rid of aborts
         target = 'events/' + make_path(*ftup[:-1]) 
