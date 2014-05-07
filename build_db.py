@@ -145,7 +145,7 @@ class DataSets:
         evt = self._grab_plexon_events(ftup)
 
         # get number of events
-        numtrials = max(events.index)
+        numtrials = max(events.index) + 1
 
         # was this an FHC recording? if so, there are no Plexon stamps
         # all events dumped into first or second slot, so other slots 
@@ -183,16 +183,22 @@ class DataSets:
                 # valid = pd.notnull(events[var])
                 # events[var][valid] = evt[self.plx_codes[var]].round(3).squeeze()
                 this_selection = events['event'] == var
-                events[this_selection] = evt[self.plx_codes[var]].round(3).squeeze()
+                events['time'][this_selection] = evt[self.plx_codes[var]].round(3).squeeze()
 
-        # # make event names column names
-        # events = events.set_index('event', append=True).unstack()
-        # # get rid of multi-index labeling
-        # events.columns = pd.Index([e[1] for e in events.columns])
+        # try to make events columns: this may fail in case some events
+        # can happen multiple times per trial; in that case, make each 
+        # event a row and perform a join
+        try: 
+            # make event names column names
+            events = events.set_index('event', append=True).unstack()
+            # get rid of multi-index labeling
+            events.columns = pd.Index([e[1] for e in events.columns])
+            # now merge task variables and events 
+            df = pd.concat([trial_variables, events], axis=1)
+        except:
+            # now merge task variables and events 
+            df = events.join(trial_variables)
 
-        # now merge task variables and events 
-        # df = pd.concat([trial_variables, events], axis=1)
-        df = events.join(trial_variables)
         df['patient'] = ftup[0]
         df['dataset'] = ftup[1]
 
