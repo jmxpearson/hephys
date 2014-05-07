@@ -94,22 +94,12 @@ class DataSets:
             target = 'censor/' + make_path(*ftup) 
             self.write_to_db(target, df)
 
-    def import_events(self, ftup):
+    def _grab_matlab_events(self, ftup):
         pdir = 'patient' + str(ftup[0]).zfill(3)
-        fname = str(ftup[0]) + '.' + str(ftup[1]) + '.plx_events.mat'
-        fullname = self.datadir + pdir + '/' + fname
         behname = self.behdir + pdir + '/' + ftup[2]
-
-        # load plexon events
-        evt = sio.loadmat(fullname)['evt'].squeeze()
 
         # load matlab events
         matevt = sio.loadmat(behname, squeeze_me=True)['data']
-
-        # was this an FHC recording? if so, there are no Plexon stamps
-        # all events dumped into first or second slot, so other slots 
-        # should have few timestamps
-        isFHC = (evt[2].size < 10)
 
         # make a dataframe from matlab behavior, pull out event codes
         bf = pd.DataFrame(matevt)
@@ -136,10 +126,31 @@ class DataSets:
 
         # concatenate trials
         events = pd.concat(tlist)
-        # make event names column names
-        events = events.set_index('event', append=True).unstack()
-        # get rid of multi-index labeling
-        events.columns = pd.Index([e[1] for e in events.columns])
+        events['event'] = events['event'].apply(str)
+
+        return (bf, events)
+
+    def _grab_plexon_events(self, ftup):
+        pdir = 'patient' + str(ftup[0]).zfill(3)
+        fname = str(ftup[0]) + '.' + str(ftup[1]) + '.plx_events.mat'
+        fullname = self.datadir + pdir + '/' + fname
+
+        # load plexon events
+        evt = sio.loadmat(fullname)['evt'].squeeze()
+
+        return evt
+
+    def import_events(self, ftup):
+        trial_variables, events = self._grab_matlab_events(ftup)
+        evt = self._grab_plexon_events(ftup)
+
+        # get number of events
+        numtrials = max(events.index)
+
+        # was this an FHC recording? if so, there are no Plexon stamps
+        # all events dumped into first or second slot, so other slots 
+        # should have few timestamps
+        isFHC = (evt[2].size < 10)
 
         if isFHC:  # line up events with phys
             # for now, we kludge this by just setting the clocks to be equal
@@ -154,25 +165,34 @@ class DataSets:
             all_events = events.stack()
             all_events.sort()
             ephys_offset = (FHC_start - all_events.values[0]).round(3)
-            events = (events.stack() + ephys_offset).unstack()
+            events['time'] += ephys_offset
 
         else:  # if we have Plexon events, use them
-            # trial start -- sometimes a spurious event marks recording onset
             startcode = self.plx_codes['trial_start']
             stopcode = self.plx_codes['trial_over']
-            if events.shape[0] != evt[startcode].shape[0]:  # same number of trial starts 
+
+            # trial start -- sometimes a spurious event marks recording onset
+            if evt[startcode].shape[0] != numtrials: 
                 evt[startcode] = evt[startcode][1:]
 
             # trial stop -- when last trial aborted, may not be present
-            if events.shape[0] != evt[stopcode].shape[0]:  # same number of trial starts 
+            if evt[stopcode].shape[0] != numtrials: 
                 evt[stopcode] = np.append(evt[stopcode], np.nan)
 
             for var in self.plx_codes:
-                valid = pd.notnull(events[var])
-                events[var][valid] = evt[self.plx_codes[var]].round(3).squeeze()
+                # valid = pd.notnull(events[var])
+                # events[var][valid] = evt[self.plx_codes[var]].round(3).squeeze()
+                this_selection = events['event'] == var
+                events[this_selection] = evt[self.plx_codes[var]].round(3).squeeze()
+
+        # # make event names column names
+        # events = events.set_index('event', append=True).unstack()
+        # # get rid of multi-index labeling
+        # events.columns = pd.Index([e[1] for e in events.columns])
 
         # now merge task variables and events 
-        df = pd.concat([bf, events], axis=1)
+        # df = pd.concat([trial_variables, events], axis=1)
+        df = events.join(trial_variables)
         df['patient'] = ftup[0]
         df['dataset'] = ftup[1]
 
@@ -238,7 +258,7 @@ class DataSets:
         # load lfp data
         tuplist = []
         print 'Loading LFP....'
-        with open(lfpfile) as infile:
+        with open(self.lfpfile) as infile:
             for line in infile:
                 tuplist.append(tuple(map(int, line.split(','))))
 
