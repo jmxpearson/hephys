@@ -6,7 +6,7 @@ from physutils import make_path, decimate
 
 class DataSets:
     def __init__(self, data_dir, behavior_dir, channel_file, 
-        spk_file, lfp_file, behavior_file, output_file):
+        spk_file, lfp_file, behavior_file, output_file, plexon_event_codes):
         self.datadir = data_dir  # directory for plexon data files
         self.behdir = behavior_dir  # directory for behavior files
         self.chanfile = channel_file  # file listing spike channels to import
@@ -14,6 +14,7 @@ class DataSets:
         self.lfpfile = lfp_file  # file listing lfp channels to import
         self.behfile = behavior_file  # file mapping phys to behavior files
         self.outfile = output_file  # name of output data file
+        self.plx_codes = plexon_event_codes  # dict mapping event names to plexon codes
 
     def write_to_db(self, tblname, df, **kwargs):
         df.to_hdf(self.outfile, tblname, append=True)
@@ -106,7 +107,9 @@ class DataSets:
         matevt = sio.loadmat(behname, squeeze_me=True)['data']
 
         # was this an FHC recording? if so, there are no Plexon stamps
-        isFHC = (evt[0].size < 10)
+        # all events dumped into first or second slot, so other slots 
+        # should have few timestamps
+        isFHC = (evt[2].size < 10)
 
         # make a dataframe from matlab behavior, pull out event codes
         bf = pd.DataFrame(matevt)
@@ -138,31 +141,40 @@ class DataSets:
         # get rid of multi-index labeling
         events.columns = pd.Index([e[1] for e in events.columns])
 
-        # now merge both event datasets 
+        if isFHC:  # line up events with phys
+            # for now, we kludge this by just setting the clocks to be equal
+            # at task start and not worrying about drift
+            num_events = map(len, evt)
+            startcode = np.argmax(num_events)  # these should be trial starts
+
+            # get time of first FHC event
+            FHC_start = evt[startcode][0].round(3).squeeze()
+
+            # compensate for offset
+            all_events = events.stack()
+            all_events.sort()
+            ephys_offset = (FHC_start - all_events.values[0]).round(3)
+            events = (events.stack() + ephys_offset).unstack()
+
+        else:  # if we have Plexon events, use them
+            # trial start -- sometimes a spurious event marks recording onset
+            startcode = self.plx_codes['trial_start']
+            stopcode = self.plx_codes['trial_over']
+            if events.shape[0] != evt[startcode].shape[0]:  # same number of trial starts 
+                evt[startcode] = evt[startcode][1:]
+
+            # trial stop -- when last trial aborted, may not be present
+            if events.shape[0] != evt[stopcode].shape[0]:  # same number of trial starts 
+                evt[stopcode] = np.append(evt[stopcode], np.nan)
+
+            for var in self.plx_codes:
+                valid = pd.notnull(events[var])
+                events[var][valid] = evt[self.plx_codes[var]].round(3).squeeze()
+
+        # now merge task variables and events 
         df = pd.concat([bf, events], axis=1)
         df['patient'] = ftup[0]
         df['dataset'] = ftup[1]
-
-        # if we have Plexon events, use them
-        if not isFHC:
-            # trial start -- sometimes a spurious event marks recording onset
-            if df.shape[0] == evt[0].shape[0]:  # same number of trial starts 
-                df['trial_start'] = evt[0].round(3).squeeze()
-            else:
-                df['trial_start'] = evt[0][1:].round(3).squeeze()
-
-            # trial stop -- when last trial aborted, may not be present
-            if df.shape[0] == evt[7].shape[0]:  # same number of trial starts 
-                df['trial_over'] = evt[7].round(3).squeeze()
-            else:
-                df['trial_over'][:-1] = evt[7].round(3).squeeze()
-
-            # rest of vars
-            vlist = zip(['start inflating', 'stop inflating', 'banked', 'outcome', 
-                'popped'], [1, 2, 3, 5, 4])
-            for var in vlist:
-                valid = pd.notnull(df[var[0]])
-                df[var[0]][valid] = evt[var[1]].round(3).squeeze()
 
         # lastly, if we are missing control columns, make sure to add them
         # (important for getting schema correct on initial write)
@@ -266,6 +278,8 @@ if __name__ == '__main__':
     behfile = '/home/jmp33/code/hephys/behavior_file_map.csv'
     outfile = '/home/jmp33/data/bartc/plexdata/bartc.hdf5'
 
-    dset = DataSets(ddir, bdir, chanfile, spkfile, lfpfile, behfile, outfile)
+    plexon_event_codes = {'start inflating': 1, 'stop inflating': 2, 'banked': 3, 'outcome': 5, 'popped': 4, 'trial_start': 0, 'trial_over': 7}
+
+    dset = DataSets(ddir, bdir, chanfile, spkfile, lfpfile, behfile, outfile, plexon_event_codes)
 
     dset.load_all()
