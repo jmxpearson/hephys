@@ -185,54 +185,54 @@ class DataSets:
         # get all (patient, dataset) tuples from already loaded spikes
         tuplist = []
         print 'Loading Events....'
-        with open(behfile) as infile:
+        with open(self.behfile) as infile:
             for line in infile:
                 thistup = tuple(line.rstrip().lower().split(','))
                 tuplist.append((int(thistup[0]), int(thistup[1]), thistup[2]))
 
         plist = [t[:-1] for t in tuplist]
-        dset.write_to_db('meta/evlist', 
+        self.write_to_db('meta/evlist', 
             pd.DataFrame(plist, columns=['patient', 'dataset']))
 
         for ftup in tuplist:
             print ftup
-            dset.import_events(ftup)
+            self.import_events(ftup)
 
     def load_all_censoring(self):
         # load censoring data
         tuplist = []
         print 'Loading Censoring data....'
-        with open(chanfile) as infile:
+        with open(self.chanfile) as infile:
             for line in infile:
                 tuplist.append(tuple(map(int, line.split(','))))
-        with open(lfpfile) as infile:
+        with open(self.lfpfile) as infile:
             for line in infile:
                 tuplist.append(tuple(map(int, line.split(','))))
 
-        dset.write_to_db('meta/censlist', 
+        self.write_to_db('meta/censlist', 
             pd.DataFrame(tuplist, columns=['patient', 'dataset', 'channel']))
 
         # iterate through files, loading data
         for ftup in tuplist:
             print ftup
-            dset.import_censor(ftup)
+            self.import_censor(ftup)
 
     def load_all_spikes(self):
         # get list of tuples with valid channels
         tuplist = []
         print 'Loading Spikes....'
-        with open(spkfile) as infile:
+        with open(self.spkfile) as infile:
             for line in infile:
                 tuplist.append(tuple(map(int, line.split(','))))
 
-        dset.write_to_db('meta/spklist', 
+        self.write_to_db('meta/spklist', 
             pd.DataFrame(tuplist, 
                 columns=['patient', 'dataset', 'channel', 'unit']))
 
         # iterate through files, loading data
         for ftup in tuplist:
             print ftup
-            dset.import_spikes(ftup)
+            self.import_spikes(ftup)
 
     def load_all_lfp(self):
         # load lfp data
@@ -242,13 +242,13 @@ class DataSets:
             for line in infile:
                 tuplist.append(tuple(map(int, line.split(','))))
 
-        dset.write_to_db('meta/lfplist', 
+        self.write_to_db('meta/lfplist', 
             pd.DataFrame(tuplist, columns=['patient', 'dataset', 'channel']))
 
         # iterate through files, loading data
         for ftup in tuplist:
             print ftup
-            dset.import_lfp(ftup)
+            self.import_lfp(ftup)
 
     def load_all(self):
         self.load_all_events()
