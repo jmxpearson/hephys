@@ -5,8 +5,7 @@ import numpy as np
 from physutils import make_path, decimate
 
 class DataSets:
-    def __init__(self, data_dir, behavior_dir, channel_file, 
-        spk_file, lfp_file, behavior_file, output_file, plexon_event_codes):
+    def __init__(self, data_dir, behavior_dir, channel_file, spk_file, lfp_file, behavior_file, output_file, plexon_event_codes, flatten_events=False):
         self.datadir = data_dir  # directory for plexon data files
         self.behdir = behavior_dir  # directory for behavior files
         self.chanfile = channel_file  # file listing spike channels to import
@@ -15,6 +14,7 @@ class DataSets:
         self.behfile = behavior_file  # file mapping phys to behavior files
         self.outfile = output_file  # name of output data file
         self.plx_codes = plexon_event_codes  # dict mapping event names to plexon codes
+        self.flatten_events = flatten_events  # encode events in a single column (False => 1 column per event)
 
     def write_to_db(self, tblname, df, **kwargs):
         df.to_hdf(self.outfile, tblname, append=True)
@@ -188,16 +188,16 @@ class DataSets:
         # try to make events columns: this may fail in case some events
         # can happen multiple times per trial; in that case, make each 
         # event a row and perform a join
-        try: 
+        if self.flatten_events:
+            # now merge task variables and events 
+            df = events.join(trial_variables)
+        else: 
             # make event names column names
             events = events.set_index('event', append=True).unstack()
             # get rid of multi-index labeling
             events.columns = pd.Index([e[1] for e in events.columns])
             # now merge task variables and events 
             df = pd.concat([trial_variables, events], axis=1)
-        except:
-            # now merge task variables and events 
-            df = events.join(trial_variables)
 
         df['patient'] = ftup[0]
         df['dataset'] = ftup[1]
