@@ -14,7 +14,7 @@ These files perform analysis on electrophysiology data taken while subjects perf
 
 * `prep_classifier_data.py` collects multichannel field potentials for each dataset and processes them into a form suitable for fitting predictive models of behavior. This processing involves constructing a matrix of integrated power in each channel in specified frequency bands for each trial (to use as regressors). Data are written to csv files.
 
-* `plots.py` contains two gists. One constructs a peri-event power "raster" across trials, the other a peri-event line plot off all channels, averaged across trial.
+* `plots.py` contains two gists. One constructs a peri-event power "raster" across trials, the other a peri-event line plot of all channels, averaged across trial.
 
 ### Organization: R
 
