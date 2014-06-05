@@ -16,6 +16,7 @@ As per Pandas convention, these should return new dataframes.
 import physutils
 import numpy as np
 from scipy.signal import hilbert
+import pandas as pd
 
 class LFPset(object):
     def __init__(self, dataframe, meta=None):
@@ -53,6 +54,13 @@ class LFPset(object):
     def instpwr(self):
         newdf = self.dataframe.apply(hilbert, raw=True)
         newdf = newdf.apply(np.absolute) ** 2
+        return LFPset(newdf, self.meta)
+
+    def smooth(self, winlen):
+        wid = np.around(winlen * self.meta['sr'])
+        newdf = pd.rolling_mean(self.dataframe, wid, 
+            min_periods=1, center=True)
+        newdf = newdf.apply(pd.Series.interpolate)
         return LFPset(newdf, self.meta)
 
     def censor(self):
