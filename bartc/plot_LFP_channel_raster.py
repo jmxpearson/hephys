@@ -9,6 +9,7 @@ import pandas.rpy.common as com
 
 import os
 os.chdir('/home/jmp33/code/hephys/bartc')
+
 ################ single channel raster ##########################
 dtup = 18, 1, 22 
 
