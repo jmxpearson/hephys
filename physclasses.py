@@ -34,34 +34,40 @@ class LFPset(object):
 
     def decimate(self, decfrac):
         newdf = physutils.dfdecimate(self.dataframe, decfrac)
-        self.meta['sr'] = self.meta.get('sr', None) / np.product(decfrac)
-        return LFPset(newdf, self.meta)
+        newmeta = self.meta.copy()
+        newmeta['sr'] = newmeta.get('sr', None) / np.product(decfrac)
+        return LFPset(newdf, newmeta)
 
     def bandlimit(self, *args):
         newdf = physutils.dfbandlimit(self.dataframe, *args)
-        return LFPset(newdf, self.meta)
+        newmeta = self.meta.copy()
+        return LFPset(newdf, newmeta)
 
     def demean(self):
         dmn = lambda x: (x - x.mean())
         newdf = self.dataframe.apply(dmn)
-        return LFPset(newdf, self.meta)
+        newmeta = self.meta.copy()
+        return LFPset(newdf, newmeta)
 
     def zscore(self):
         zsc = lambda x: (x - x.mean()) / x.std()
         newdf = self.dataframe.apply(zsc)
-        return LFPset(newdf, self.meta)
+        newmeta = self.meta.copy()
+        return LFPset(newdf, newmeta)
 
     def instpwr(self):
         newdf = self.dataframe.apply(hilbert, raw=True)
         newdf = newdf.apply(np.absolute) ** 2
-        return LFPset(newdf, self.meta)
+        newmeta = self.meta.copy()
+        return LFPset(newdf, newmeta)
 
     def smooth(self, winlen):
         wid = np.around(winlen * self.meta['sr'])
         newdf = pd.rolling_mean(self.dataframe, wid, 
             min_periods=1, center=True)
         newdf = newdf.apply(pd.Series.interpolate)
-        return LFPset(newdf, self.meta)
+        newmeta = self.meta.copy()
+        return LFPset(newdf, newmeta)
 
     def censor(self):
         excludes = physutils.get_censor(
@@ -74,7 +80,8 @@ class LFPset(object):
             excl_vec = np.any(excludes.values, axis=1)
             newdf = self.dataframe
             newdf[excl_vec] = np.nan
-            return LFPset(newdf, self.meta)
+            newmeta = self.meta.copy()
+            return LFPset(newdf, newmeta)
         else:
             return self
 
