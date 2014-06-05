@@ -34,7 +34,7 @@ class LFPset(object):
 
     def decimate(self, decfrac):
         newdf = physutils.dfdecimate(self.dataframe, decfrac)
-        self.meta['sr'] = self.meta.get('sr', None) / decfrac
+        self.meta['sr'] = self.meta.get('sr', None) / np.product(decfrac)
         return LFPset(newdf, self.meta)
 
     def bandlimit(self, *args):
