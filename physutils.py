@@ -126,8 +126,7 @@ def bandlimit(df, band=(0.01, 120)):
     else:
         fband = band
 
-    # b, a = ssig.ellip(2, 0.1, 40, [2 * dt * f for f in fband])
-    b, a = ssig.iirfilter(2, [2 * dt * f for f in fband], rp=0.1, rs=40,
+    b, a = ssig.filtfilt(2, [2 * dt * f for f in fband], rp=0.1, rs=40,
         ftype='ellip')
     return df.apply(lambda x: ssig.filtfilt(b, a, x), raw=True)
 
