@@ -114,7 +114,6 @@ def bandlimit(df, band=(0.01, 120)):
     Computes bandpass-filtered version of time series in df.
     Band is either a two-element indexed sequence or a conventionally
     defined electrophysiological frequency band.
-    WARNING: this is a causal filter, which incurs a phase lag!
     """
     dt = df.index[1] - df.index[0]
     band_dict = {'delta': (0.1, 4), 'theta': (4, 8), 'alpha': (8, 13), 
@@ -126,7 +125,7 @@ def bandlimit(df, band=(0.01, 120)):
     else:
         fband = band
 
-    b, a = ssig.filtfilt(2, [2 * dt * f for f in fband], rp=0.1, rs=40,
+    b, a = ssig.iirfilter(2, [2 * dt * f for f in fband], rp=0.1, rs=40,
         ftype='ellip')
     return df.apply(lambda x: ssig.filtfilt(b, a, x), raw=True)
 
