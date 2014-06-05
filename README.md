@@ -10,6 +10,8 @@ These files perform analysis on electrophysiology data taken while subjects perf
 
 * `physutils.py` is a module containing utility functions related to data fetching and processing. Includes code for selecting all data relevant to a dataset tuple, bandlimiting, smoothing, splitting data around events, and binning spikes.
 
+* `physclasses.py` provides an LFP class wrapper for a Pandas dataframe. Includes useful functions from `physutils.py` as methods.
+
 * `prep_classifier_data.py` collects multichannel field potentials for each dataset and processes them into a form suitable for fitting predictive models of behavior. This processing involves constructing a matrix of integrated power in each channel in specified frequency bands for each trial (to use as regressors). Data are written to csv files.
 
 * `plots.py` contains two gists. One constructs a peri-event power "raster" across trials, the other a peri-event line plot off all channels, averaged across trial.
@@ -25,4 +27,6 @@ These files perform analysis on electrophysiology data taken while subjects perf
 * Python: NumPy, SciPy, Pandas, h5py (for reading Matlab files), pytables (via Pandas), warnings, rpy2 (for calling R).
 
 * R: glmnet, ggplot2, reshape.
+
+* Task-specific code needs to import `build_db.py`, `physutils.py`, etc., so these need to be somewhere in PYTHONPATH.
 
