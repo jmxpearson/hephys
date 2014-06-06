@@ -32,15 +32,23 @@ lfpset = lfpset.instpwr()
 lfpset = lfpset.censor()
 
 # rolling smooth
-lfpset = lfpset.smooth(0.1)
+lfpset = lfpset.smooth(0.075)
 
 # convert to dB
 lfpset = lfpset.apply(lambda x: 10 * np.log10(x))
 
 # get events
 evt = fetch(dbname, 'events', *dtup[:-1])
-max_inf = evt['inflate_time'].max()
-t_evt = evt[['start inflating', 'inflate_time','banked']].dropna()
+t_evt = evt[['start inflating', 'banked', 'popped']]
+
+# calculate duration of inflation
+didpop = ~np.isnan(t_evt['popped'])
+stops = t_evt['banked'].copy()
+stops[didpop] = t_evt['popped'][didpop]
+t_evt['didpop'] = didpop
+t_evt['stop inflating'] = stops
+t_evt['inf_dur'] = t_evt['stop inflating'] - t_evt['start inflating']
+max_inf = t_evt.inf_dur.max()
 
 # define pre and post time intervals
 Tpre = -1
@@ -50,15 +58,19 @@ Tpost = np.ceil(max_inf) + 1
 chunks = evtsplit(lfpset, t_evt['start inflating'], Tpre, Tpost)
 
 # sort trials by inflate time
-sortord = np.argsort(t_evt['inflate_time']) + 1
-chunks = chunks[sortord].reset_index()
+evt_sorted = t_evt.sort(columns=['didpop', 'inf_dur'])
+
+# reindex by new sorted order
+sortord = evt_sorted.index
+colnames = chunks.columns  # sequential list of trials
+chunks = chunks[sortord]  # reorder trials
+chunks.columns = colnames  # relabel trials in sorted order
+chunks = chunks.reset_index()
 chunks = pd.melt(chunks, id_vars=['time'])
 
 # make a dataframe of inflate times for plot annotation
-inflate_times = t_evt['inflate_time'].copy()
-inflate_times.sort()
-inflate_times = inflate_times.reset_index(drop=True)
-inflate_times = pd.DataFrame(inflate_times).reset_index()
+inflate_times = evt_sorted.inf_dur.reset_index()
+inflate_times.trial = inflate_times.index  # number trials sequentially
 
 # load up R
 R = robjects.r

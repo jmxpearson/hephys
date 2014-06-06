@@ -67,14 +67,14 @@ rasterize <- function(df, an) {
         fill=as.numeric(value)))
 
     pp <- plt + geom_raster() + 
-    scale_fill_gradientn(colours=jet.colors(7), limits=c(-70, 0)) + 
+    scale_fill_gradientn(colours=jet.colors(7), limits=c(-80, 0)) + 
     geom_vline(xintercept=0, show_guide=FALSE, size=1) + 
     labs(title = titlestr, x='\nTime (s)', y='Trial\n') + 
     scale_x_continuous(expand=c(0,0)) + 
     scale_y_continuous(expand=c(0,0)) + 
     theme_bw() + 
     theme(plot.title = element_text(lineheight=1, size=28), axis.text=element_text(color='black', size=12), axis.title.x=element_text(size=20), axis.title.y=element_text(size=20) ) +
-    annotate('line', x=an[, 2], y=an[, 1], color='black', size=1)
+    annotate('point', x=an[, 2], y=an[, 1], color='black', size=2)
 
     return(pp)
 }
