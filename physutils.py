@@ -106,7 +106,7 @@ def evtsplit(df, ts, startT, endT, t0=0):
     alltrials = pd.concat(elist, axis=1)
     alltrials = alltrials.set_index(binT)
     alltrials.index.name = 'time'
-    alltrials.columns = pd.Index(np.arange(1, nevt + 1), name='trial')
+    alltrials.columns = pd.Index(np.arange(nevt), name='trial')
     return alltrials
 
 def bandlimit(df, band=(0.01, 120)):
