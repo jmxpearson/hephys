@@ -2,6 +2,21 @@ import numpy as np
 import pandas as pd
 from physutils import *
 from physclasses import *
+import warnings
+
+def within_range(test_value, anchor_list, radius_tuple):
+    # return true when test_value is not within a radius tuple
+    # of any value in anchor_list 
+    # NOTE: both elements of radiust tuple must be positive!
+    if radius_tuple < (0, 0):
+        wrnstr = """Both elements of the exclusion radius must be positive.
+        Answers may not mean what you think."""
+        warnings.warn(wrnstr)
+
+    dist = test_value - np.array(anchor_list)
+    within_range = np.logical_and(dist > -radius_tuple[0],
+        dist < radius_tuple[1]) 
+    return np.any(within_range)
 
 # define some useful numbers
 np.random.seed(12345)
@@ -68,10 +83,6 @@ for name, grp in groups:
     dt = 1. / np.array(banded.meta['sr']).round(3)  # dt in ms
     Tpre = 2  # time relative to event to start
     Tpost = 1.5  # time following event to exclude
-
-    # running average of power
-    print 'Running mean...'
-    meanpwr = pd.rolling_mean(groupdata, np.ceil(Tpre / dt), min_periods=1)
 
     # grab events (successful stops = true positives for training)
     print 'Fetching events (true positives)...'
