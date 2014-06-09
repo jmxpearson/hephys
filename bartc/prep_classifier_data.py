@@ -77,7 +77,7 @@ for name, grp in groups:
 
     # concatenate data from all channels
     print 'Merging channels...'
-    groupdata = pd.concat(allchans)
+    groupdata = pd.concat(allchans, axis=1)
     groupdata = LFPset(groupdata, banded.meta)
 
     # specify peri-event times
