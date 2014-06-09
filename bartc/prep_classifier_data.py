@@ -73,11 +73,12 @@ for name, grp in groups:
 
 
         # append to whole dataset
-        allchans.append(banded)
+        allchans.append(banded.dataframe)
 
     # concatenate data from all channels
     print 'Merging channels...'
     groupdata = pd.concat(allchans)
+    groupdata = LFPset(groupdata, banded.meta)
 
     # specify peri-event times
     dt = 1. / np.array(banded.meta['sr']).round(3)  # dt in ms
@@ -89,7 +90,7 @@ for name, grp in groups:
     evt = fetch(dbname, 'events', *dtup[:2])['banked'].dropna()
     evt = np.around(evt / dt) * dt  # round to nearest dt
     # extend with nearby times
-    truepos = (pd.DataFrame(pd.concat([evt, evt - 0.5, evt - 1.0]), 
+    truepos = (pd.DataFrame(pd.concat([evt, evt - 0.5, evt - 1.0]).values, 
         columns=['time']))
     truepos['outcome'] = 1
 
@@ -98,25 +99,11 @@ for name, grp in groups:
     maxT = np.max(groupdata.index.values)
     # make some candidate random times
     Nrand = 3000
-    tcands = np.random.rand(Nrand) * (maxT - Tpre) + Tpre
-    tcands = np.around(tcands / dt) * dt  # round to nearest dt
-    tcands = np.unique(tcands)
-    # now remove all those within [Tpre, Tpost] of true positives
-    rand_times = np.zeros_like(tcands)
-    for cand in enumerate(tcands):
-        # how close are we to already selected times?
-        tt = cand[1]
-        dist = truepos['time'] - tt
-
-        # if dist in [Tpre,0] or [0, Tpost], reject
-        if not (np.any(np.logical_and(dist < Tpre, dist > 0)) or 
-            np.any(np.logical_and(dist > -Tpost, dist < 0))):
-            rand_times[cand[0]] = tt 
-    rand_times = rand_times[rand_times != 0]
-    # if we have too many, we can always throw some away
-    if rand_times.size > 1000:
-        np.random.shuffle(rand_times)
-        rand_times = rand_times[:1000]
+    candidates = np.random.rand(Nrand) * (maxT - Tpre) + Tpre
+    candidates = np.around(candidates / dt) * dt  # round to nearest dt
+    candidates = np.unique(candidates)
+    rand_times = filter(lambda x: ~within_range(x, truepos['time'], 
+        (Tpre, Tpost)), candidates)[:1000]
     trueneg = pd.DataFrame(rand_times, columns=['time'])
     trueneg['outcome'] = 0
 
@@ -126,7 +113,8 @@ for name, grp in groups:
 
     # get running average estimate of power at each timepoint of interest
     print 'Grabbing data for each event...'
-    meanpwr = pd.rolling_mean(groupdata, np.ceil(Tpre / dt), min_periods=1)
+    meanpwr = pd.rolling_mean(groupdata.dataframe, 
+        np.ceil(Tpre / dt), min_periods=1)
     tset = pd.concat([allevt, meanpwr], axis=1, join='inner')
     tset = tset.dropna()  # can't send glmnet any row with a NaN
 
