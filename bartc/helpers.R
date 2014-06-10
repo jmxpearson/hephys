@@ -96,9 +96,25 @@ chanmeans <- function(df) {
 
 extract_coeffs <- function(fitobj) {
   coeffs <- melt(fitobj$beta)
-  splitnames <- unlist(lapply(rownames(coeffs), FUN=function(x){strsplit(x, "[.]")}))
+  splitnames <- unlist(lapply(rownames(coeffs), 
+    FUN=function(x){strsplit(x, "[.]")}))
   newcols <- matrix(splitnames, ncol=2, byrow=TRUE)
   colnames(newcols) <- c("band", "channel")
   df <- cbind(coeffs, newcols)
   ddf <- cast(df, channel ~ band)
+}
+
+plot_coefficient_grid <- function(df) {
+  # plot a heatmap grid of coefficients for lfp regression
+  plt <- ggplot(df, aes(x=band, y=channel))
+  pp <- plt + geom_tile(aes(fill=value), color='gray') +
+    scale_fill_gradient2(low='blue', high='red', na.value='white', midpoint=0,
+        guide=guide_colorbar(title='Regression coefficient')) +
+    scale_x_discrete('Frequency Band', expand=c(0, 0)) +
+    scale_y_discrete('Channel', expand=c(0, 0)) +
+    theme(axis.ticks=element_blank(), axis.text=element_text(color='black',
+        size=12), axis.title.x=element_text(size=20), 
+        axis.title.y=element_text(size=20))
+
+  return(pp)
 }
