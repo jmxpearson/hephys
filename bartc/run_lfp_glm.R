@@ -2,7 +2,7 @@
 run_lfp_glm <- function(dfile){
   # given an input data file, perform an elastic net regression
   # on the data contained therein
-  dat <- read.table(dfile, sep=',', header=TRUE, row.names=1)
+  dat <- read.table(dfile, sep=',', header=TRUE, row.names=1, colClasses=c('numeric'))
   
   # make model matrix
   y <- dat[, 1]
