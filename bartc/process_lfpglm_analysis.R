@@ -16,10 +16,7 @@ plotroc(perf)
 dev.off()
 
 ######## code to plot heatmap of regression coefficients ##########
-coeff_mat <- extract_coeffs(fitobjs[[ind]])
+df <- extract_coeffs(fitobjs[[ind]])
 
-df <- melt(coeff_mat)
-df$band <- factor(df$band, levels=c('delta', 'theta', 'alpha', 
-    'beta', 'gamma'))
 plt <- plot_coefficient_grid(df)
 print(plt)

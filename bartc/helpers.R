@@ -101,7 +101,12 @@ extract_coeffs <- function(fitobj) {
   newcols <- matrix(splitnames, ncol=2, byrow=TRUE)
   colnames(newcols) <- c("band", "channel")
   df <- cbind(coeffs, newcols)
-  ddf <- cast(df, channel ~ band)
+  cmat <- cast(df, channel ~ band)
+  df <- melt(cmat)
+  df$band <- factor(df$band, levels=c('delta', 'theta', 'alpha', 
+      'beta', 'gamma'))
+  rownames(df) <- c()
+  return(df)
 }
 
 plot_coefficient_grid <- function(df) {
