@@ -93,3 +93,12 @@ chanmeans <- function(df) {
 
     return(pp)
 }
+
+extract_coeffs <- function(fitobj) {
+  coeffs <- melt(fitobj$beta)
+  splitnames <- unlist(lapply(rownames(coeffs), FUN=function(x){strsplit(x, "[.]")}))
+  newcols <- matrix(splitnames, ncol=2, byrow=TRUE)
+  colnames(newcols) <- c("band", "channel")
+  df <- cbind(coeffs, newcols)
+  ddf <- cast(df, channel ~ band)
+}
