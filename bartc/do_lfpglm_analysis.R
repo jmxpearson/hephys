@@ -1,5 +1,5 @@
 library(glmnet)
-source('dolfpglm.R')
+source('run_lfp_glm.R')
 source('setup_env.R')
 
 
@@ -8,7 +8,7 @@ for (ind in 1:numunits) {
   fname <- paste(paste(chanlist[ind,], collapse='.'), 'lfpglmdata.csv', sep='.')
   dfile <- paste(ddir, fname, sep='/')
   print(dfile)
-  thisfit <- dolfpglm(dfile)
+  thisfit <- run_lfp_glm(dfile)
   fitobjs[[ind]] <- thisfit
 }
 
