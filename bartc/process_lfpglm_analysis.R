@@ -18,5 +18,9 @@ dev.off()
 ######## code to plot heatmap of regression coefficients ##########
 df <- extract_coeffs(fitobjs[[ind]])
 
+# useful summary stats
+band_stats <- ddply(df, ~band, summarize, mean = mean(value), 
+    mean_abs = mean(abs(value)), std = sd(value), std_abs = sd(abs(value)))
+
 plt <- plot_coefficient_grid(df)
 print(plt)
