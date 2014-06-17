@@ -10,4 +10,5 @@ numunits <- dim(chanlist)[1]
 
 library(glmnet)
 library(ggplot2)
+library(plyr)
 library(reshape)
