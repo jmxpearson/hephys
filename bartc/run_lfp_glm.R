@@ -55,6 +55,7 @@ get_best_beta <- function(glmobj) {
 
   minlambda <- glmobj$lambda.1se
   minlambda.ind <- which(glmobj$lambda == minlambda)
+  fit <- glmobj$glmnet.fit
   beta <- fit$beta[, minlambda.ind]
   score <- glmobj$cvm[minlambda.ind]
 
