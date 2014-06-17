@@ -112,9 +112,9 @@ extract_coeffs <- function(fitobj) {
 plot_coefficient_grid <- function(df) {
   # plot a heatmap grid of coefficients for lfp regression
   plt <- ggplot(df, aes(x=band, y=channel))
-  pp <- plt + geom_tile(aes(fill=value), color='gray') +
+  pp <- plt + geom_tile(aes(fill=abs(value)), color='gray') +
     scale_fill_gradient2(low='blue', high='red', na.value='white', midpoint=0,
-        guide=guide_colorbar(title='Regression coefficient')) +
+        guide=guide_colorbar(title='Absolute\nregression\ncoefficient')) +
     scale_x_discrete('Frequency Band', expand=c(0, 0)) +
     scale_y_discrete('Channel', expand=c(0, 0)) +
     theme(axis.ticks=element_blank(), axis.text=element_text(color='black',
