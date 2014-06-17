@@ -52,7 +52,7 @@ for name, grp in groups:
 
         # break out by frequency bands
         print 'Filtering by frequency...'
-        filters = ['delta', 'theta', 'alpha']
+        filters = ['delta', 'theta', 'alpha', 'beta']
         banded = lfp.bandlimit(filters)
 
         # decimate down to 40 Hz

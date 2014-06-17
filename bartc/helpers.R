@@ -27,7 +27,7 @@ get_performance <- function(ind) {
     glmobj <- fitobjs[[ind]]$glmobj
     fname <- paste(paste(chanlist[ind,], collapse='.'), 'lfpglmdata.csv', sep='.')
     dfile <- paste(ddir, fname, sep='/')
-    dat <- read.csv(dfile, header=TRUE, row.names=1)
+    dat <- read.csv(dfile, header=TRUE, row.names=1, colClasses=c('numeric'))
 
     # get performance
     min.ind <- which(glmobj$lambda == glmobj$lambda.min)
