@@ -49,6 +49,11 @@ class LFPset(object):
         newmeta = self.meta.copy()
         return LFPset(newdf, newmeta)
 
+    def interpolate(self):
+        newdf = self.dataframe.interpolate()
+        newmeta = self.meta.copy()
+        return LFPset(newdf, newmeta)
+
     def zscore(self):
         zsc = lambda x: (x - x.mean()) / x.std()
         newdf = self.dataframe.apply(zsc)
