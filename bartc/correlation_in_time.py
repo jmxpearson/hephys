@@ -52,11 +52,15 @@ def PCA_series(lfp, win, frac_overlap=1):
     return make_PCA_series(lfp, winbins, skip)
 
 # for name, grp in groups:
-name = (17, 2)
+name = (20, 1)
+print "Fetching LFP data..."
 lfp = fetch_all_such_LFP(dbname, *name)
+print "Decimating..."
 lfp = lfp.decimate(5)  # decimate to 40 Hz
-eigseries = PCA_series(lfp, win=2.0, frac_overlap=0.75).censor()
-var_explained = eigseries.div(eigseries.sum(axis=1), axis=0)
+print "Extracting eigenvalues..."
+eigseries = PCA_series(lfp, win=0.25, frac_overlap=0.95).censor()
+var_explained = LFPset(eigseries.div(eigseries.sum(axis=1), axis=0), 
+    meta=eigseries.meta.copy())
 
 # fetch events
 evt = fetch(dbname, 'events', *name)
@@ -67,12 +71,7 @@ Tpre = -2
 Tpost = 0
 
 # break up data around events
-split_lfp = eigseries.evtsplit(t_evt['stop inflating'], Tpre, Tpost)
+split_lfp = var_explained.evtsplit(t_evt['stop inflating'], Tpre, Tpost)
 
-# # get mean of each psth and pivot table
-# chanmeans = chunks.apply(pd.DataFrame.mean, axis=1)
-# chanmeans = chanmeans.stack().unstack(level=0)
-
-# # zscore
-# zscore = lambda x: (x - x.mean()) / x.std()
-# chanmeans = chanmeans.apply(zscore)
+# group by time and get mean for each channel for each time
+chanmeans = split_lfp.groupby(level=1).mean()
