@@ -44,8 +44,14 @@ def get_eigen_series(df):
 # for name, grp in groups:
 name = (17, 2)
 lfp = fetch_all_such_LFP(dbname, *name)
+
+# option 1: using hilbert transform and smoothing
 lfpz = get_analytic_signal(lfp, ['theta'])
 S = make_correlation_frame(lfpz)
 Sbar = S.smooth(1).decimate(10)
 eigs = get_eigen_series(Sbar) 
 eigs = eigs.censor()
+
+# option 2: doing rolling correlation, then PCA
+dslfp = lfp.decimate(5)
+aa = pd.rolling_corr(dslfp.dataframe, 100)
