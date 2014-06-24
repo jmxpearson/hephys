@@ -2,12 +2,13 @@ import numpy as np
 import pandas as pd
 from physutils import *
 from physclasses import *
+import os
 
 # set a random seed
 np.random.seed(12345)
 
 # name of database to use
-dbname = '/home/jmp33/data/bartc/plexdata/bartc.hdf5'
+dbname = os.path.expanduser('~/data/bartc/plexdata/bartc.hdf5')
 
 # first, get a list of lfp channels
 setlist = pd.read_hdf(dbname, '/meta/lfplist')
