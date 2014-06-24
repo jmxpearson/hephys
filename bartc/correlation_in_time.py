@@ -61,6 +61,7 @@ print "Extracting eigenvalues..."
 eigseries = PCA_series(lfp, win=0.25, frac_overlap=0.95).censor()
 var_explained = LFPset(eigseries.div(eigseries.sum(axis=1), axis=0), 
     meta=eigseries.meta.copy())
+normed = LFPset(eigseries.div(eigseries.dataframe.iloc[:, -1], axis=0), meta=eigseries.meta.copy())
 
 # fetch events
 evt = fetch(dbname, 'events', *name)
@@ -71,7 +72,7 @@ Tpre = -2
 Tpost = 0
 
 # break up data around events
-split_lfp = var_explained.evtsplit(t_evt['stop inflating'], Tpre, Tpost)
+split_lfp = normed.evtsplit(t_evt['stop inflating'], Tpre, Tpost)
 
 # group by time and get mean for each channel for each time
-chanmeans = split_lfp.groupby(level=1).mean()
+eigmeans = split_lfp.groupby(level=1).mean()
