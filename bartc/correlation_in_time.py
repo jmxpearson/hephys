@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
+import os
 from physutils import *
 from physclasses import *
-import os
 
 # set a random seed
 np.random.seed(12345)
@@ -44,15 +44,31 @@ def get_eigen_series(df):
 
 # for name, grp in groups:
 name = (17, 2)
-lfp = fetch_all_such_LFP(dbname, *name)
+# lfp = fetch_all_such_LFP(dbname, *name)
+
+# test data
+fake_vals = np.random.rand(1000, 5)
+fake_df = pd.DataFrame(fake_vals, index=np.arange(0, 5, 0.005))
+fake_meta = {'dbname': dbname, 'sr': 200, 'tuple': (17, 2)}
+fake_lfp = LFPset(fake_df, fake_meta)
 
 # option 1: using hilbert transform and smoothing
-lfpz = get_analytic_signal(lfp, ['theta'])
-S = make_correlation_frame(lfpz)
-Sbar = S.smooth(1).decimate(10)
-eigs = get_eigen_series(Sbar) 
-eigs = eigs.censor()
+def method1(lfp):
+    lfpz = get_analytic_signal(lfp, ['theta'])
+    S = make_correlation_frame(lfpz)
+    Sbar = S.smooth(1).decimate(10)
+    eigs = get_eigen_series(Sbar) 
+    eigs = eigs.censor()
+    return eigs
 
 # option 2: doing rolling correlation, then PCA
-dslfp = lfp.decimate(5)
-aa = pd.rolling_corr(dslfp.dataframe, 100)
+def method2(lfp):
+    dslfp = lfp.decimate(5)
+    corrseries = pd.rolling_corr(dslfp.dataframe, window=100, 
+        min_periods=0)
+    corrseries = corrseries.ix[1::10, :, :]
+    corrseries = corrseries.to_frame(filter_observations=False).transpose()
+    lfp_pairs = LFPset(corrseries, meta=dslfp.meta.copy())
+    eigs = get_eigen_series(lfp_pairs)
+    return eigs
+
