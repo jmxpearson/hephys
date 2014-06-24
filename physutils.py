@@ -85,7 +85,7 @@ def evtsplit(df, ts, startT, endT, t0=0):
     Split time series data into peri-event chunks. Data are in df.
     Times of events around which to split are in ts. 
     Code grabs startT:endT bins relative to event, so times before 
-    the event have startT < 0. The first time bin is take to have 
+    the event have startT < 0. The first time bin is assumed to have 
     timestamp t0.
     """
     dt = df.index[1] - df.index[0]

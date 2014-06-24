@@ -35,8 +35,7 @@ def get_eigen_series(df):
 def make_PCA_series(lfp, window, skip):
     # window is the length of the window to slide (in bins)
     # skip is the spacing between samples in the returned frame
-    corrseries = pd.rolling_corr(lfp.dataframe, window=window, 
-        min_periods=1)
+    corrseries = pd.rolling_corr(lfp.dataframe, window=window)
     corrseries = corrseries.iloc[::skip, :, :]
     corrseries = corrseries.to_frame(filter_observations=False).transpose()
     lfp_pairs = LFPset(corrseries, meta=lfp.meta.copy())
@@ -56,5 +55,24 @@ def PCA_series(lfp, win, frac_overlap=1):
 name = (17, 2)
 lfp = fetch_all_such_LFP(dbname, *name)
 lfp = lfp.decimate(5)  # decimate to 40 Hz
+eigseries = PCA_series(lfp, win=2.0, frac_overlap=0.75).censor()
+var_explained = eigseries.div(eigseries.sum(axis=1), axis=0)
 
+# fetch events
+evt = fetch(dbname, 'events', *name)
+t_evt = evt[['stop inflating', 'banked']].dropna()
 
+# prepare to do some plotting
+Tpre = -2
+Tpost = 0
+
+# break up data around events
+split_lfp = eigseries.evtsplit(t_evt['stop inflating'], Tpre, Tpost)
+
+# # get mean of each psth and pivot table
+# chanmeans = chunks.apply(pd.DataFrame.mean, axis=1)
+# chanmeans = chanmeans.stack().unstack(level=0)
+
+# # zscore
+# zscore = lambda x: (x - x.mean()) / x.std()
+# chanmeans = chanmeans.apply(zscore)

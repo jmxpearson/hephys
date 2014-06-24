@@ -90,6 +90,13 @@ class LFPset(object):
         else:
             return self
 
+    def evtsplit(self, times, Tpre, Tpost, t0=0):
+        # note: Tpre < 0 for times before the events in times
+        split_to_series = lambda x: physutils.evtsplit(x, times, Tpre, Tpost, 
+            t0).unstack()
+        return self.dataframe.apply(split_to_series)
+
+
 def fetch_LFP(dbname, *tup):
     """ 
     Given a database and a tuple (tup), return an LFPset object.
