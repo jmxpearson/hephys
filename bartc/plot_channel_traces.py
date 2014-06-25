@@ -8,12 +8,12 @@ import rpy2.robjects as robjects
 import pandas.rpy.common as com
 
 import os
-os.chdir('/home/jmp33/code/hephys/bartc')
+os.chdir(os.path.expanduser('~/code/hephys/bartc'))
 ################ all channel traces ##########################
 dtup = 18, 1 
 
 # open data file
-dbname = '/home/jmp33/data/bartc/plexdata/bartc.hdf5'
+dbname = os.path.expanduser('~/data/bartc/plexdata/bartc.hdf5')
 
 # get lfp data
 print "Fetching Data..."
@@ -35,10 +35,6 @@ lfp = lfp.instpwr()
 print "Censoring..."
 lfp = lfp.censor()
 
-# moving average
-print "Smoothing..."
-lfp = lfp.smooth(0.1)
-
 # get events
 evt = fetch(dbname, 'events', *dtup)
 t_evt = evt[['stop inflating', 'banked']].dropna()
@@ -51,7 +47,10 @@ Tpost = 0
 split_lfp = lfp.evtsplit(t_evt['stop inflating'], Tpre, Tpost)
 
 # group by time and get mean for each channel for each time
-chanmeans = LFPset(split_lfp.groupby(level=1).mean(), meta=lfp.meta.copy()).zscore() 
+chanmeans = LFPset(split_lfp.groupby(level=1).median(), meta=lfp.meta.copy()).zscore() 
+
+print "Smoothing..."
+chanmeans = chanmeans.smooth(0.2)
 
 print "Sending to R..."
 # prepare dataframe for passing to R
