@@ -8,7 +8,7 @@ decimate
 bandlimit
 instantaneous power
 censor
-split
+evtsplit
 
 As per Pandas convention, these should return new dataframes.
 """
