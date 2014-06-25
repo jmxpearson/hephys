@@ -14,24 +14,29 @@ dtup = 18, 1
 
 # open data file
 dbname = '/home/jmp33/data/bartc/plexdata/bartc.hdf5'
-dt = 1./1000
 
 # get lfp data
+print "Fetching Data..."
 lfp = fetch_all_such_LFP(dbname, *dtup)
     
 # bandpass filter
+print "Filtering..."
 lfp = lfp.bandlimit(['theta'])
 
 # decimate to 40 Hz effective sampling
+print "Decimating..."
 lfp = lfp.decimate(5)
 
 # instantaneous power
+print "Calculating Power..."
 lfp = lfp.instpwr()
 
 # remove censored regions
+print "Censoring..."
 lfp = lfp.censor()
 
 # moving average
+print "Smoothing..."
 lfp = lfp.smooth(0.1)
 
 # get events
@@ -48,6 +53,7 @@ split_lfp = lfp.evtsplit(t_evt['stop inflating'], Tpre, Tpost)
 # group by time and get mean for each channel for each time
 chanmeans = LFPset(split_lfp.groupby(level=1).mean(), meta=lfp.meta.copy()).zscore() 
 
+print "Sending to R..."
 # prepare dataframe for passing to R
 rdat = chanmeans
 rdat.columns = range(rdat.shape[1])
