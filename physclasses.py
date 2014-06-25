@@ -69,7 +69,7 @@ class LFPset(object):
     def smooth(self, winlen):
         wid = np.around(winlen * self.meta['sr'])
         newdf = pd.rolling_mean(self.dataframe, wid, 
-            min_periods=1, center=True)
+            min_periods=1)
         newdf = newdf.apply(pd.Series.interpolate)
         newmeta = self.meta.copy()
         return LFPset(newdf, newmeta)
