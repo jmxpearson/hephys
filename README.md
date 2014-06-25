@@ -12,7 +12,7 @@ These files perform analysis on electrophysiology data taken while subjects perf
 
 * `physclasses.py` provides an LFP class wrapper for a Pandas dataframe. Includes useful functions from `physutils.py` as methods.
 
-## bartc
+#### bartc
 
 * `build_bart_db.py` uses the `DataSets` class from `build_db.py` to construct the BART database.
 
@@ -28,7 +28,7 @@ These files perform analysis on electrophysiology data taken while subjects perf
 
 ### Organization: R
 
-## bartc
+#### bartc
 
 * `do_lfpglm_analysis.R` calls the function in `dolfpglm.R` to run a glmnet regression on data for a specific dataset. Saves fit objects to disk.
 
