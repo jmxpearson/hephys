@@ -51,28 +51,71 @@ def PCA_series(lfp, win, frac_overlap=1):
     skip = max(1, int((1 - frac_overlap) * winbins))
     return make_PCA_series(lfp, winbins, skip)
 
+def corr_then_med(lfp, events, Tpre, Tpost):
+    # get correlation matrix between time series, extract eigenvalues, 
+    # median across trials
+    # Tpre and Tpost are times relative to events to grab
+
+    print "Decimating..."
+    lfpd = lfp.decimate(5)  # decimate to 40 Hz
+
+    print "Extracting eigenvalues..."
+    eigseries = PCA_series(lfpd, win=0.25, frac_overlap=0.95).censor()
+
+    # norm to max eigenvalue
+    total_var_normed = LFPset(eigseries.div(eigseries.dataframe.iloc[:, -1], axis=0), meta=eigseries.meta.copy())
+
+    # normalize to max eigenvalue
+    max_eigen_normed = LFPset(eigseries.div(eigseries.sum(axis=1), axis=0), meta=eigseries.meta.copy())
+
+    # break up data around events
+    frames = (eigseries, total_var_normed, max_eigen_normed)
+    print "Splitting Data..."
+    splits = [df.evtsplit(events, Tpre, Tpost) for df in frames]
+
+    # group by time and get mean for each channel for each time
+    medians = [df.groupby(level=1).median() for df in splits]
+    return tuple(medians) 
+
+def med_then_corr(lfp, events, Tpre, Tpost):
+    # median channels across trials, then get correlation matrix across time
+    # and extract eigenvalue series
+
+    print "Decimating..."
+    lfpd = lfp.decimate(5).censor()  # decimate to 40 Hz
+
+    # break up data around events
+    print "Splitting Data..."
+    split_lfp = lfpd.evtsplit(events, Tpre, Tpost)
+
+    chanmeds = LFPset(split_lfp.groupby(level=1).median(), 
+        meta=lfpd.meta.copy())
+
+    print "Extracting eigenvalues..."
+    eigseries = PCA_series(chanmeds, win=0.25, frac_overlap=0.95)
+    
+    # normlize as percent total variance
+    total_var_normed = LFPset(eigseries.div(eigseries.sum(axis=1), axis=0), meta=eigseries.meta.copy())
+
+    # normalize to max eigenvalue
+    max_eigen_normed = LFPset(eigseries.div(eigseries.dataframe.iloc[:, -1], axis=0), meta=eigseries.meta.copy())
+
+    return (eigseries, total_var_normed, max_eigen_normed)
+
 # for name, grp in groups:
-name = (20, 1)
+name = (18, 1)
+print name
+
 print "Fetching LFP data..."
 lfp = fetch_all_such_LFP(dbname, *name)
-print "Decimating..."
-lfp = lfp.decimate(5)  # decimate to 40 Hz
-print "Extracting eigenvalues..."
-eigseries = PCA_series(lfp, win=0.25, frac_overlap=0.95).censor()
-var_explained = LFPset(eigseries.div(eigseries.sum(axis=1), axis=0), 
-    meta=eigseries.meta.copy())
-normed = LFPset(eigseries.div(eigseries.dataframe.iloc[:, -1], axis=0), meta=eigseries.meta.copy())
 
 # fetch events
 evt = fetch(dbname, 'events', *name)
-t_evt = evt[['stop inflating', 'banked']].dropna()
+stops = evt[['stop inflating']].dropna().values
 
 # prepare to do some plotting
 Tpre = -2
 Tpost = 0
 
-# break up data around events
-split_lfp = normed.evtsplit(t_evt['stop inflating'], Tpre, Tpost)
-
-# group by time and get mean for each channel for each time
-eigmeans = split_lfp.groupby(level=1).mean()
+median_of_corr = corr_then_med(lfp, stops, Tpre, Tpost)
+corr_of_median = med_then_corr(lfp, stops, Tpre, Tpost)
