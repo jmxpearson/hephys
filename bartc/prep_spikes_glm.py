@@ -7,35 +7,32 @@ import os
 import pandas as pd
 from physutils import *
 
+def set_intervals_to_true(df, starts, stops):
+    pairs = zip(starts, stops)
+    for p in pairs:
+        df[slice(*p)] = 1
+    return df
+
 def make_regressor_is_in_trial(taxis, events):
     # takes a dataframe of events and a time axis and returns a binary series
     reg = pd.Series(0, index=taxis, name='is_in_trial')
     starts = events['trial_start']
     stops = events['trial_over']
-    pairs = zip(starts, stops)
-    for p in pairs:
-        reg[slice(*p)] = 1
-    return reg
+    return set_intervals_to_true(reg, starts, stops)
 
 def make_regressor_is_outcome(taxis, events):
     # takes a dataframe of events and a time axis and returns a binary series
     reg = pd.Series(0, index=taxis, name='is_outcome')
     starts = events['outcome']
     stops = events['trial_over']
-    pairs = zip(starts, stops)
-    for p in pairs:
-        reg[slice(*p)] = 1
-    return reg
+    return set_intervals_to_true(reg, starts, stops)
 
 def make_regressor_is_inflating(taxis, events):
     # takes a dataframe of events and a time axis and returns a binary series
     reg = pd.Series(0, index=taxis, name='is_inflating')
     starts = events['start inflating']
     stops = events[['stop inflating', 'popped']].sum(axis=1)
-    pairs = zip(starts, stops)
-    for p in pairs:
-        reg[slice(*p)] = 1
-    return reg
+    return set_intervals_to_true(reg, starts, stops)
 
 def make_regressor_elapsed_time(taxis, events):
     # takes a dataframe of events and a time axis and returns a binary series
@@ -49,6 +46,22 @@ def make_regressor_elapsed_time(taxis, events):
         reg[slc] = time - time[0] 
     return reg
 
+def make_regressor_is_banked(taxis, events):
+    # takes a dataframe of events and a time axis and returns a binary series
+    reg = pd.Series(0, index=taxis, name='banked')
+    trialset = events[['outcome', 'trial_over', 'banked']].dropna()
+    starts = trialset['outcome']
+    stops = trialset['trial_over']
+    return set_intervals_to_true(reg, starts, stops)
+
+def make_regressor_is_popped(taxis, events):
+    # takes a dataframe of events and a time axis and returns a binary series
+    reg = pd.Series(0, index=taxis, name='popped')
+    trialset = events[['outcome', 'trial_over', 'popped']].dropna()
+    starts = trialset['outcome']
+    stops = trialset['trial_over']
+    return set_intervals_to_true(reg, starts, stops)
+
 def make_regressor_trial_type(taxis, events, trial_type):
     # takes a dataframe of events and a time axis and returns a binary series
     reg = pd.Series(0, index=taxis, name='trial_type' + str(trial_type))
@@ -59,6 +72,19 @@ def make_regressor_trial_type(taxis, events, trial_type):
     for p in pairs:
         reg[slice(*p)] = 1
     return reg
+
+def make_regressor_frame(spikes, events):
+    # get unique trial types
+    unique_trial_types = np.unique(events['trial_type'])
+
+    # make a regressor call for each trial type
+    # the j=j is needed because of Python's late binding
+    ttype_regressors = [lambda x, y, j=j: make_regressor_trial_type(x, y, j) for j in unique_trial_types]
+
+    regressor_list = [make_regressor_is_in_trial, make_regressor_is_outcome, make_regressor_is_inflating, make_regressor_elapsed_time, make_regressor_is_banked, make_regressor_is_popped] + ttype_regressors
+
+    return pd.concat([f(spikes.index, events) for f in regressor_list], axis=1)
+
 
 # set a random seed
 np.random.seed(12345)
@@ -76,14 +102,4 @@ spks = load_spikes(dbname, dtup)
 
 evt = fetch(dbname, 'events', *dtup[0:2])
 
-# get unique trial types
-unique_trial_types = np.unique(evt['trial_type'])
-
-# make a regressor call for each trial type
-# the j=j is needed because of Python's late binding
-ttype_regressors = [lambda x, y, j=j: make_regressor_trial_type(x, y, j) for j in unique_trial_types]
-
-regressor_list = [make_regressor_is_in_trial, make_regressor_is_outcome, make_regressor_is_inflating, make_regressor_elapsed_time] + ttype_regressors
-
-regressor_frame = pd.concat([f(spks.index, evt) for f in regressor_list], 
-    axis=1)
+regressors = make_regressor_frame(spks, evt)
