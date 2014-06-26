@@ -21,10 +21,22 @@ def make_regressor_is_inflating(taxis, events):
     # takes a dataframe of events and a time axis and returns a binary series
     reg = pd.Series(0, index=taxis, name='is_inflating')
     starts = events['start inflating']
-    stops = events[['banked', 'popped']].sum(axis=1)
+    stops = events[['stop inflating', 'popped']].sum(axis=1)
     pairs = zip(starts, stops)
     for p in pairs:
         reg[slice(*p)] = 1
+    return reg
+
+def make_regressor_elapsed_time(taxis, events):
+    # takes a dataframe of events and a time axis and returns a binary series
+    reg = pd.Series(0, index=taxis, name='elapsed_time')
+    starts = events['start inflating']
+    stops = events[['stop inflating', 'popped']].sum(axis=1)
+    pairs = zip(starts, stops)
+    for p in pairs:
+        slc = slice(*p)
+        time = reg[slc].index.values
+        reg[slc] = time - time[0] 
     return reg
 
 # set a random seed
@@ -43,7 +55,7 @@ spks = load_spikes(dbname, dtup)
 
 evt = fetch(dbname, 'events', *dtup[0:2])
 
-regressor_list = [make_regressor_is_in_trial, make_regressor_is_inflating]
+regressor_list = (make_regressor_is_in_trial, make_regressor_is_inflating, make_regressor_elapsed_time)
 
 regressor_frame = pd.concat([f(spks.index, evt) for f in regressor_list], 
     axis=1)
