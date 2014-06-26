@@ -9,14 +9,23 @@ from physutils import *
 
 def make_regressor_is_in_trial(taxis, events):
     # takes a dataframe of events and a time axis and returns a binary series
-    is_in_trial = pd.Series(0, index=taxis, name='is_in_trial')
-    starts = evt['trial_start']
-    stops = evt['trial_over']
+    reg = pd.Series(0, index=taxis, name='is_in_trial')
+    starts = events['trial_start']
+    stops = events['trial_over']
     pairs = zip(starts, stops)
     for p in pairs:
-        is_in_trial[slice(*p)] = 1
-    return is_in_trial
+        reg[slice(*p)] = 1
+    return reg
 
+def make_regressor_is_inflating(taxis, events):
+    # takes a dataframe of events and a time axis and returns a binary series
+    reg = pd.Series(0, index=taxis, name='is_inflating')
+    starts = events['start inflating']
+    stops = events[['banked', 'popped']].sum(axis=1)
+    pairs = zip(starts, stops)
+    for p in pairs:
+        reg[slice(*p)] = 1
+    return reg
 
 # set a random seed
 np.random.seed(12345)
@@ -34,7 +43,7 @@ spks = load_spikes(dbname, dtup)
 
 evt = fetch(dbname, 'events', *dtup[0:2])
 
-regressor_list = [make_regressor_is_in_trial]
+regressor_list = [make_regressor_is_in_trial, make_regressor_is_inflating]
 
 regressor_frame = pd.concat([f(spks.index, evt) for f in regressor_list], 
     axis=1)
