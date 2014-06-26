@@ -235,7 +235,24 @@ def get_censor(dbname, taxis, *args):
     
     return excludes
    
+def censor_spikes(df, dbname, dtup):
+    excludes = get_censor(dbname, df.index, *dtup)
+    if not excludes.empty:
+        excludes = excludes[excludes.columns.intersection(
+            df.columns)]
+        excl_vec = np.any(excludes.values, axis=1)
+        newdf = df.copy()
+        newdf[excl_vec] = np.nan
+        return newdf
+    else:
+        return df
 
+def load_spikes(dbname, dtup):
+    spks = fetch(dbname, 'spikes', *dtup)
+
+    spkbin = binspikes(spks, 0.05)  # use 50 ms bins
+
+    return censor_spikes(spkbin, dbname, dtup)
 
 if __name__ == '__main__':
 

@@ -19,4 +19,4 @@ setlist = pd.read_hdf(dbname, '/meta/spklist')
 # for idx, row in setlist.iterrows()
 dtup = (17, 2, 1, 1)
 
-spks = fetch(dbname, 'spikes', *dtup)
+spks = load_spikes(dbname, dtup)
