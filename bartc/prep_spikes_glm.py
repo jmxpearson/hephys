@@ -39,6 +39,17 @@ def make_regressor_elapsed_time(taxis, events):
         reg[slc] = time - time[0] 
     return reg
 
+def make_regressor_trial_type(taxis, events, trial_type):
+    # takes a dataframe of events and a time axis and returns a binary series
+    reg = pd.Series(0, index=taxis, name='trial_type' + str(trial_type))
+    evred = events[events['trial_type'] == trial_type]  # restrict trials
+    starts = evred['trial_start']
+    stops = evred['trial_over']
+    pairs = zip(starts, stops)
+    for p in pairs:
+        reg[slice(*p)] = 1
+    return reg
+
 # set a random seed
 np.random.seed(12345)
 
@@ -55,7 +66,16 @@ spks = load_spikes(dbname, dtup)
 
 evt = fetch(dbname, 'events', *dtup[0:2])
 
-regressor_list = (make_regressor_is_in_trial, make_regressor_is_inflating, make_regressor_elapsed_time)
+# get unique trial types
+unique_trial_types = np.unique(evt['trial_type'])
+
+# make a regressor call for each trial type
+# the j=j is needed because of Python's late binding
+# also, can't use every trial type (else confounded with is_in_trial, so 
+# choose first trial type as baseline)
+ttype_regressors = [lambda x, y, j=j: make_regressor_trial_type(x, y, j) for j in unique_trial_types[1:]]
+
+regressor_list = [make_regressor_is_in_trial, make_regressor_is_inflating, make_regressor_elapsed_time] + ttype_regressors
 
 regressor_frame = pd.concat([f(spks.index, evt) for f in regressor_list], 
     axis=1)
