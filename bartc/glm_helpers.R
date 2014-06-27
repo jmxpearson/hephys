@@ -1,11 +1,11 @@
-fit_all_and_save <- function(filext, outname, family, datalist) {
+fit_all_and_save <- function(filext, outname, family, datalist, measure) {
   fitobjs <- list()
   for (ind in 1:dim(datalist)[1]) {
     fname <- paste(paste(datalist[ind,], collapse='.'), filext, sep='.')
     dfile <- paste(ddir, fname, sep='/')
     print(dfile)
     dat <- read.table(dfile, sep=',', header=TRUE, row.names=1, colClasses=c('numeric'))
-    thisfit <- run_glm(dat, family)
+    thisfit <- run_glm(dat, family, measure)
     fitobjs[[ind]] <- thisfit
   }
 
