@@ -1,13 +1,11 @@
 
-run_lfp_glm <- function(dfile){
-  # given an input data file, perform an elastic net regression
+run_lfp_glm <- function(dframe, type='binomial'){
+  # given an input data frame, perform an elastic net regression
   # on the data contained therein
 
-  dat <- read.table(dfile, sep=',', header=TRUE, row.names=1, colClasses=c('numeric'))
-  
   # make model matrix
-  y <- dat[, 1]
-  X <- dat[, -1]
+  y <- dframe[, 1]
+  X <- dframe[, -1]
 
   allobjs = list()
   alphalist = seq(0, 1, 0.1)
@@ -20,7 +18,7 @@ run_lfp_glm <- function(dfile){
     # don't include constant in X; glmnet will fit an intercept, 
     # but if we supply
     # one manually, it will be penalized, which we don't want
-    glmobj <- cv.glmnet(as.matrix(X), y, alpha = alpha, family = 'binomial', 
+    glmobj <- cv.glmnet(as.matrix(X), y, alpha = alpha, family = type, 
                         foldid = folds, intercept = TRUE, type.measure = "auc")
 
     allobjs[[length(allobjs) + 1]] <- get_best_beta(glmobj)
