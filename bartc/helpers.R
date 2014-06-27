@@ -129,8 +129,9 @@ plot_spike_coefficient_grid <- function(df) {
   plt <- ggplot(df, aes(x=unit, y=variable))
   pp <- plt + geom_tile(aes(fill=value), color='gray') +
     scale_fill_gradient2(low='blue', high='red', na.value='white', 
-      midpoint=100, 
-      guide=guide_colorbar(title='Percent change\nfrom baseline')) +
+      midpoint=0, 
+      guide=guide_colorbar(title='Percent change\nfrom baseline'), 
+      limits=c(-100, 100)) +
     scale_x_discrete('Unit', expand=c(0, 0), limits=unique(df$unit),
       breaks=seq(5, max(unique(df$unit)), 5)) +
     scale_y_discrete('Regressor', expand=c(0, 0)) +
