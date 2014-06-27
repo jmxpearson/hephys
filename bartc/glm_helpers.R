@@ -77,10 +77,17 @@ get_best_alpha <- function(objlist, alphalist) {
   # given a list of objects returned by get_best_beta and a list of alpha 
   # values, return the object corresponding to the highest score
 
-  scorelist <- sapply(objlist, function(x) {x$score})
-  max_ind <- which.max(scorelist)  # if using auc, want max score
+  measure_type <- tolower(objlist[[1]]$glmobj$name)
+  if (grepl('auc', measure_type)) {
+    extract_best <- which.max
+  } else {
+    extract_best <- which.min
+  }
 
-  bestobj <- c(objlist[[max_ind]], alpha=alphalist[max_ind])
+  scorelist <- sapply(objlist, function(x) {x$score})
+  best_ind <- extract_best(scorelist)  # if using auc, want max score
+
+  bestobj <- c(objlist[[best_ind]], alpha=alphalist[best_ind])
 
   return(bestobj)
 }
