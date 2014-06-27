@@ -1,5 +1,5 @@
 
-run_lfp_glm <- function(dframe, type='binomial'){
+run_glm <- function(dframe, type='binomial'){
   # given an input data frame, perform an elastic net regression
   # on the data contained therein
 
