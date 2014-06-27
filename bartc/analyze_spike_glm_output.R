@@ -5,7 +5,10 @@ source('helpers.R')
 load(file=paste(ddir, 'spkfitdata', sep='/'))
 
 ######## code to plot heatmap of regression coefficients ##########
-df <- ldply(fitobjs, .fun = function(x) {data.frame(t(x$beta))}) 
+betas <- ldply(fitobjs, .fun = function(x) {data.frame(t(x$beta))}) 
+effects <- exp(betas)
+effects <- cbind(data.frame(unit=1:dim(effects)[1]), effects)
+df <- melt(effects, id.vars=c('unit'))
 
-plt <- plot_coefficient_grid(df)
+plt <- plot_spike_coefficient_grid(df)
 print(plt)

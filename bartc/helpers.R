@@ -123,3 +123,19 @@ plot_coefficient_grid <- function(df) {
 
   return(pp)
 }
+
+plot_spike_coefficient_grid <- function(df) {
+  # plot a heatmap grid of coefficients for spike count regression
+  plt <- ggplot(df, aes(x=unit, y=variable))
+  pp <- plt + geom_tile(aes(fill=value), color='gray') +
+    scale_fill_gradient2(low='blue', high='red', na.value='white', midpoint=1,
+        guide=guide_colorbar(title='Percent change\nfrom baseline')) +
+    scale_x_discrete('Unit', expand=c(0, 0), limits=unique(df$unit),
+      breaks=seq(5, max(unique(df$unit)), 5)) +
+    scale_y_discrete('Regressor', expand=c(0, 0)) +
+    theme(axis.ticks=element_blank(), axis.text=element_text(color='black',
+        size=12), axis.title.x=element_text(size=20), 
+        axis.title.y=element_text(size=20))
+
+  return(pp)
+}
