@@ -85,38 +85,31 @@ def make_regressor_frame(spikes, events):
 
     return pd.concat([f(spikes.index, events) for f in regressor_list], axis=1)
 
+if __name__ == '__main__':
+    # set a random seed
+    np.random.seed(12345)
 
-# set a random seed
-np.random.seed(12345)
+    # name of database to use
+    dbname = os.path.expanduser('~/data/bartc/plexdata/bartc.hdf5')
 
-# name of database to use
-dbname = os.path.expanduser('~/data/bartc/plexdata/bartc.hdf5')
+    # first, get a list of lfp channels
+    setlist = pd.read_hdf(dbname, '/meta/spklist')
 
-# first, get a list of lfp channels
-setlist = pd.read_hdf(dbname, '/meta/spklist')
+    for idx, row in setlist.iterrows():
+        dtup = tuple(row)
+        print dtup    
 
-# for idx, row in setlist.iterrows():
-dtup = (17, 2, 1, 1)
+        spks = load_spikes(dbname, dtup)
 
-spks = load_spikes(dbname, dtup)
+        evt = fetch(dbname, 'events', *dtup[0:2])
 
-evt = fetch(dbname, 'events', *dtup[0:2])
+        regressors = make_regressor_frame(spks, evt)
 
-regressors = make_regressor_frame(spks, evt)
+        # make spikes the first column in dataframe
+        df = pd.concat([spks, regressors], axis=1)
 
-# make spikes the first column in dataframe
-df = pd.concat([spks, regressors], axis=1)
+        # write out
+        outdir = '/home/jmp33/data/bartc/'
+        outfile = outdir + '.'.join(map(str, dtup)) + '.spkglmdata.csv'
 
-###### prepare to send to R ############
-import rpy2.robjects as robjects
-import pandas.rpy.common as com
-
-# load up R
-R = robjects.r
-R('library(glmnet)')
-R("source('glm_helpers.R')")
-R("source('setup_env.R')")
-rdf = com.convert_to_r_dataframe(df)
-
-# run elastic net glm
-fitobj = R['run_glm'](rdf, 'poisson')
+        df.to_csv(outfile)
