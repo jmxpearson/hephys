@@ -1,5 +1,5 @@
 library(glmnet)
-source('run_lfp_glm.R')
+source('glm_helpers.R')
 source('setup_env.R')
 
 
