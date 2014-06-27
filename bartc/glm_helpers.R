@@ -1,3 +1,16 @@
+fit_all_and_save <- function(filext, outname, family, datalist) {
+  fitobjs <- list()
+  for (ind in 1:dim(datalist)[1]) {
+    fname <- paste(paste(datalist[ind,], collapse='.'), filext, sep='.')
+    dfile <- paste(ddir, fname, sep='/')
+    print(dfile)
+    dat <- read.table(dfile, sep=',', header=TRUE, row.names=1, colClasses=c('numeric'))
+    thisfit <- run_glm(dat, family)
+    fitobjs[[ind]] <- thisfit
+  }
+
+  save(fitobjs, file=paste(ddir, outname, sep='/'))
+}
 
 run_glm <- function(dframe, type='binomial'){
   # given an input data frame, perform an elastic net regression
