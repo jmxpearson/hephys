@@ -68,9 +68,10 @@ get_best_beta <- function(glmobj) {
   minlambda.ind <- which(glmobj$lambda == minlambda)
   fit <- glmobj$glmnet.fit
   beta <- fit$beta[, minlambda.ind]
+  intercept <- fit$a0[, minlambda.ind]
   score <- glmobj$cvm[minlambda.ind]
 
-  return(list(beta = beta, score = score, glmobj = glmobj))
+  return(list(beta = beta, intercept = intercept, score = score, glmobj = glmobj))
 }
 
 get_best_alpha <- function(objlist, alphalist) {
