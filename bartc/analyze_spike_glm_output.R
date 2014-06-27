@@ -6,7 +6,7 @@ load(file=paste(ddir, 'spkfitdata', sep='/'))
 
 ######## code to plot heatmap of regression coefficients ##########
 betas <- ldply(fitobjs, .fun = function(x) {data.frame(t(x$beta))}) 
-effects <- exp(betas)
+effects <- exp(betas) * 100
 effects <- cbind(data.frame(unit=1:dim(effects)[1]), effects)
 df <- melt(effects, id.vars=c('unit'))
 
