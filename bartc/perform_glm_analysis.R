@@ -10,12 +10,14 @@ if (args[1] == 'lfp') {
     outname <- 'lfpfitdata' 
     family <- 'binomial'
     datalist <- chanlist
+    measure <- 'auc'
 } else if (args[1] == 'spikes') {
     print("Performing spike analysis...")
     filext <- 'spkglmdata.csv'
     outname <- 'spkfitdata'
     family <- 'poisson'
     datalist <- unitlist
+    measure <- 'deviance'
 }
 
-fit_all_and_save(filext, outname, family, datalist)
+fit_all_and_save(filext, outname, family, datalist, measure)

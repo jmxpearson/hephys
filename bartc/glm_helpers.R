@@ -12,7 +12,7 @@ fit_all_and_save <- function(filext, outname, family, datalist) {
   save(fitobjs, file=paste(ddir, outname, sep='/'))
 }
 
-run_glm <- function(dframe, type='binomial'){
+run_glm <- function(dframe, type='binomial', measure="deviance"){
   # given an input data frame, perform an elastic net regression
   # on the data contained therein
 
@@ -32,7 +32,7 @@ run_glm <- function(dframe, type='binomial'){
     # but if we supply
     # one manually, it will be penalized, which we don't want
     glmobj <- cv.glmnet(as.matrix(X), y, alpha = alpha, family = type, 
-                        foldid = folds, intercept = TRUE, type.measure = "auc")
+                        foldid = folds, intercept = TRUE, type.measure = measure)
 
     allobjs[[length(allobjs) + 1]] <- get_best_beta(glmobj)
   }
