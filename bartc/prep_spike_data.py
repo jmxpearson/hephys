@@ -103,3 +103,20 @@ spks = load_spikes(dbname, dtup)
 evt = fetch(dbname, 'events', *dtup[0:2])
 
 regressors = make_regressor_frame(spks, evt)
+
+# make spikes the first column in dataframe
+df = pd.concat([spks, regressors], axis=1)
+
+###### prepare to send to R ############
+import rpy2.robjects as robjects
+import pandas.rpy.common as com
+
+# load up R
+R = robjects.r
+R('library(glmnet)')
+R("source('glm_helpers.R')")
+R("source('setup_env.R')")
+rdf = com.convert_to_r_dataframe(df)
+
+# run elastic net glm
+fitobj = R['run_glm'](rdf, 'poisson')
