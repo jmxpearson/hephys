@@ -109,7 +109,7 @@ extract_coeffs <- function(fitobj) {
   return(df)
 }
 
-plot_coefficient_grid <- function(df) {
+plot_lfp_coefficient_grid <- function(df) {
   # plot a heatmap grid of coefficients for lfp regression
   plt <- ggplot(df, aes(x=band, y=channel))
   pp <- plt + geom_tile(aes(fill=abs(value)), color='gray') +

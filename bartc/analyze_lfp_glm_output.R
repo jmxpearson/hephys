@@ -22,5 +22,5 @@ df <- extract_coeffs(fitobjs[[ind]])
 band_stats <- ddply(df, ~band, summarize, mean = mean(value), 
     mean_abs = mean(abs(value)), std = sd(value), std_abs = sd(abs(value)))
 
-plt <- plot_coefficient_grid(df)
+plt <- plot_lfp_coefficient_grid(df)
 print(plt)
