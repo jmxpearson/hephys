@@ -64,7 +64,7 @@ get_best_beta <- function(glmobj) {
   # given a glmobj from elastic net, extract the cross-validation score and
   # coefficients of the best fit
 
-  minlambda <- glmobj$lambda.min
+  minlambda <- glmobj$lambda.1se
   minlambda.ind <- which(glmobj$lambda == minlambda)
   fit <- glmobj$glmnet.fit
   beta <- fit$beta[, minlambda.ind]
