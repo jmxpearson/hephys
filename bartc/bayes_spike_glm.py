@@ -44,3 +44,12 @@ for idx, row in setlist.iterrows():
     coeffs = coeffs.append(stan_to_series(fit, data_dict), ignore_index=True)
 
 perc_change = np.exp(coeffs) * 100 - 100
+nonshrunk = abs(perc_change) > 10
+print nonshrunk.sum()
+
+import matplotlib.pyplot as plt
+plt.subplot(1, 2, 1)
+plt.imshow(perc_change, interpolation='nearest')
+plt.subplot(1, 2, 2)
+plt.imshow(nonshrunk, interpolation='nearest')
+plt.show()
