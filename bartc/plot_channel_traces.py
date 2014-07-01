@@ -10,7 +10,7 @@ import pandas.rpy.common as com
 import os
 os.chdir(os.path.expanduser('~/code/hephys/bartc'))
 ################ all channel traces ##########################
-dtup = 18, 1 
+dtup = 20, 1 
 
 # open data file
 dbname = os.path.expanduser('~/data/bartc/plexdata/bartc.hdf5')
@@ -38,36 +38,56 @@ lfp = lfp.censor()
 # get events
 evt = fetch(dbname, 'events', *dtup)
 t_evt = evt[['stop inflating', 'banked']].dropna()
+stops = t_evt['stop inflating']
+pops = evt['popped'].dropna()
 
 # define pre and post time intervals
 Tpre = -2
 Tpost = 0
 
 # split lfp around stops
-split_lfp = lfp.evtsplit(t_evt['stop inflating'], Tpre, Tpost)
+stop_split = lfp.evtsplit(stops, Tpre, Tpost)
+pop_split = lfp.evtsplit(pops, Tpre, Tpost)
 
 # group by time and get mean for each channel for each time
-chanmeans = LFPset(split_lfp.groupby(level=1).median(), meta=lfp.meta.copy()).zscore() 
+stop_means = LFPset(stop_split.groupby(level=1).median(), meta=lfp.meta.copy()).zscore() 
+pop_means = LFPset(pop_split.groupby(level=1).median(), meta=lfp.meta.copy()).zscore() 
 
 print "Smoothing..."
-chanmeans = chanmeans.smooth(0.2)
+stop_means= stop_means.smooth(0.2)
+pop_means= pop_means.smooth(0.2)
 
 print "Sending to R..."
-# prepare dataframe for passing to R
-rdat = chanmeans
-rdat.columns = range(rdat.shape[1])
-rdat = chanmeans.reset_index()
-rdat = pd.melt(rdat, id_vars='time')
-rdf = com.convert_to_r_dataframe(rdat)
+def make_filename(df, name):
+    base = '~/Dropbox/hephys/media/figs/' 
+    colnames = df.columns
+    bands = set(map(lambda x: x.split('.')[0], colnames))
+    pieces = list(df.meta['tuple']) + ['_'.join(bands), name, 'chanplot', 'pdf']
+    return "\'" + base + '.'.join(map(str, pieces)) + "\'"
 
-# load up R
-R = robjects.r
-R("""source('helpers.R')""")
+def print_from_R(df, name):
+    # prepare dataframe for passing to R
+    rdat = df.copy()
+    rdat.columns = range(rdat.shape[1])
+    rdat = rdat.reset_index()
+    rdat = pd.melt(rdat, id_vars='time')
+    rdf = com.convert_to_r_dataframe(rdat)
 
-# make plot
-R("""pdf(file='~/Dropbox/hephys/media/figs/chanplot.pdf', paper='USr', width=11, height=8.5)""")
+    fname = make_filename(df, name)
 
-pp = R['chanmeans'](rdf)
-R.plot(pp)
+    # load up R
+    R = robjects.r
+    R("""source('helpers.R')""")
 
-R('dev.off()')
+    # make plot
+    R("pdf(file=" + fname + ", paper='USr', width=11, height=8.5)")
+
+    pp = R['chanmeans'](rdf)
+    R.plot(pp)
+
+    R('dev.off()')
+
+frames = [stop_means, pop_means]
+names = ['stop', 'pop']
+for (frame, name) in zip(frames, names):
+    print_from_R(frame, name)
