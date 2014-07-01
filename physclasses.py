@@ -61,7 +61,13 @@ class LFPset(object):
         return LFPset(newdf, newmeta)
 
     def instpwr(self):
-        newdf = self.dataframe.apply(hilbert, raw=True)
+        # by padding up to next highest power of 2, we get a huge 
+        # performance boost; truncate afterward
+        Nstart = self.dataframe.shape[0]
+        Nfft = 2 ** np.ceil(np.log2(Nstart))
+        hilbert_pad = lambda x: hilbert(x, N=Nfft)[:Nstart]
+        newdf = self.dataframe.apply(hilbert_pad, raw=True)
+        newdf = newdf.iloc[:Nstart, :]
         newdf = newdf.apply(np.absolute) ** 2
         newmeta = self.meta.copy()
         return LFPset(newdf, newmeta)
