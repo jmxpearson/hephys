@@ -23,13 +23,13 @@ lfp = fetch_all_such_LFP(dbname, *dtup)
 print "Filtering..."
 lfp = lfp.bandlimit(['theta'])
 
+# decimate to 100 Hz effective sampling
+print "Decimating..."
+lfp = lfp.decimate(5)
+
 # instantaneous power
 print "Calculating Power..."
 lfp = lfp.instpwr()
-
-# decimate to 40 Hz effective sampling
-print "Decimating..."
-lfp = lfp.decimate(5)
 
 # remove censored regions
 print "Censoring..."
