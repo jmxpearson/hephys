@@ -67,7 +67,6 @@ class LFPset(object):
         Nfft = 2 ** np.ceil(np.log2(Nstart))
         hilbert_pad = lambda x: hilbert(x, N=Nfft)[:Nstart]
         newdf = self.dataframe.apply(hilbert_pad, raw=True)
-        newdf = newdf.iloc[:Nstart, :]
         newdf = newdf.apply(np.absolute) ** 2
         newmeta = self.meta.copy()
         return LFPset(newdf, newmeta)
