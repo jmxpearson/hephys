@@ -98,28 +98,32 @@ def spectrogram(series, winlen, frac_overlap):
 
     spec = specgram(series.values, NFFT=Nwin, Fs=sr, noverlap=Noverlap, 
         pad_to=Npad)
-    return pd.DataFrame(spec[0].T, columns=spec[1], index=spec[2])
+    return pd.DataFrame(spec[0].T, columns=spec[1], index=spec[2] + series.index[0])
 
-def avg_spectrogram(series, winlen, frac_overlap, events, Tpre, Tpost):
+def continuous_wavelet(series, freqs=None):
     """
-    Given a Pandas series, split it into chunks of (Tpre, Tpost) around
-    events, do the spectrogram on each, average, and returns a DataFrame
-    with time as the index and frequency as the column label.
-    Note that, as per evtsplit, events before the events have Tpre < 0.
+    Construct a continuous wavelet transform 
+    time-frequency plot for the data series.
+    pars are parameters for the Morlet wavelet.
+    Returns a tuple (time-frequency matrix, frequencies, times)
     """
-    df = evtsplit(series, events, Tpre, Tpost)
-    spectra = [spectrogram(ser, winlen, frac_overlap) for (name, ser) in df.iteritems()]
-    specmats = map(lambda x: x.values, spectra)
-    times = spectra[0].index + Tpre
-    freqs = spectra[0].columns
-    allspecs = np.dstack(specmats)
-    meanspec = np.mean(allspecs, axis=2)
+    if not freqs:
+        # define some default LFP frequencies of interest
+        freqlist = [np.arange(1, 13), np.arange(15, 30, 3), np.arange(35, 100, 5)]
+        freqs = np.concatenate(freqlist)
 
-    return pd.DataFrame(meanspec, index=times, columns=freqs)
+    dt = series.index[1] - series.index[0]
+    wids = 1. / (freqs * dt)  # widths need to be in samples, not seconds
+    rwavelet = lambda N, w: np.real(ssig.morlet(N, w=2*np.pi, s=w))
+    iwavelet = lambda N, w: np.imag(ssig.morlet(N, w=2*np.pi, s=w))
+    tfr = ssig.cwt(series.values, rwavelet, wids)
+    tfi = ssig.cwt(series.values, iwavelet, wids)
+    tf = tfr ** 2 + tfi ** 2
+    return pd.DataFrame(tf.T, columns=freqs, index=series.index)
 
-def plot_spectrogram(spectrum):
+def plot_time_frequency(spectrum):
     """
-    Plot spectrogram. Modeled after the matplotlib lib code.
+    Time-frequency plot. Modeled after the matplotlib lib code.
     spectrum is a dataframe with frequencies in columns and time in rows
     """
     Z = np.flipud(10 * np.log10(spectrum.values.T))
@@ -134,23 +138,24 @@ def plot_spectrogram(spectrum):
     plt.show()
     return im
 
-def time_frequency(series, freqs=None):
+def avg_time_frequency(series, tffun, events, Tpre, Tpost, *args, **kwargs):
     """
-    Construct a time-frequency plot for the data series.
-    pars are parameters for the Morlet wavelet.
-    Returns a tuple (time-frequency matrix, frequencies, times)
+    Given a Pandas series, split it into chunks of (Tpre, Tpost) around
+    events, do the time-frequency on each, average using the function tffun,
+    and return a DataFrame with time as the index and frequency as the 
+    column label.
+    Note that, as per evtsplit, events before the events have Tpre < 0.
+    *args and **kwargs are passed on to tffun
     """
-    if not freqs:
-        # define some default LFP frequencies of interest
-        freqlist = [np.arange(1, 13), np.arange(15, 30, 3), np.arange(35, 100, 5)]
-        freqs = np.concatenate(freqlist)
+    df = evtsplit(series, events, Tpre, Tpost)
+    spectra = [tffun(ser, *args, **kwargs) for (name, ser) in df.iteritems()]
+    specmats = map(lambda x: x.values, spectra)
+    times = spectra[0].index
+    freqs = spectra[0].columns
+    allspecs = np.dstack(specmats)
+    meanspec = np.mean(allspecs, axis=2)
 
-    dt = series.index[1] - series.index[0]
-    wids = 1. / (freqs * dt)  # widths need to be in samples, not seconds
-    wavelet = lambda N, w: ssig.morlet(N, w=2*np.pi, s=w)
-    tf = ssig.cwt(series.values, wavelet, wids)
-    return pd.DataFrame(tf.T, columns=freqs, index=series.index)
-
+    return pd.DataFrame(meanspec, index=times, columns=freqs)
 
 
 def evtsplit(df, ts, Tpre, Tpost, t0=0):
