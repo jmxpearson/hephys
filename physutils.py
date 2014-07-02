@@ -87,7 +87,7 @@ def spectrogram(series, winlen, frac_overlap):
     Given a Pandas series, a window length (in s), and a percent 
     overlap between successive windows, calculate the spectrogram
     based on the moving window stft.
-    Returns a tuple (spectrum, frequencies, times)
+    Returns a DataFrame with frequencies in columns and time in rows
     Uses matplotlib.mlab.specgram
     """
     dt = series.index[1] - series.index[0]
@@ -96,8 +96,9 @@ def spectrogram(series, winlen, frac_overlap):
     Npad = int(2 ** np.ceil(np.log2(Nwin)))  # next closest power of 2 to pad to
     Noverlap = min(int(np.ceil(frac_overlap * Nwin)), Nwin - 1)
 
-    return specgram(series.values, NFFT=Nwin, Fs=sr, noverlap=Noverlap, 
+    spec = specgram(series.values, NFFT=Nwin, Fs=sr, noverlap=Noverlap, 
         pad_to=Npad)
+    return pd.DataFrame(spec[0].T, columns=spec[1], index=spec[2])
 
 def avg_spectrogram(series, winlen, frac_overlap, events, Tpre, Tpost):
     """
@@ -108,19 +109,22 @@ def avg_spectrogram(series, winlen, frac_overlap, events, Tpre, Tpost):
     """
     df = evtsplit(series, events, Tpre, Tpost)
     spectra = [spectrogram(ser, winlen, frac_overlap) for (name, ser) in df.iteritems()]
-    specmats = map(lambda x: x[0], spectra)
-    times = spectra[0][2] + Tpre
-    freqs = spectra[0][1]
+    specmats = map(lambda x: x.values, spectra)
+    times = spectra[0].index + Tpre
+    freqs = spectra[0].columns
     allspecs = np.dstack(specmats)
     meanspec = np.mean(allspecs, axis=2)
 
-    return pd.DataFrame(meanspec.T, index=times, columns=freqs)
+    return pd.DataFrame(meanspec, index=times, columns=freqs)
 
-def plot_spectrogram(spectrum, frequencies, times):
+def plot_spectrogram(spectrum):
     """
     Plot spectrogram. Modeled after the matplotlib lib code.
+    spectrum is a dataframe with frequencies in columns and time in rows
     """
-    Z = np.flipud(10 * np.log10(spectrum))
+    Z = np.flipud(10 * np.log10(spectrum.values.T))
+    frequencies = spectrum.columns
+    times = spectrum.index
     extent = times[0], times[-1], frequencies[0], frequencies[-1]
     im = plt.imshow(Z, extent=extent)
     plt.axis('auto')
@@ -129,6 +133,25 @@ def plot_spectrogram(spectrum, frequencies, times):
     plt.ylabel('Frequency (Hz)')
     plt.show()
     return im
+
+def time_frequency(series, freqs=None):
+    """
+    Construct a time-frequency plot for the data series.
+    pars are parameters for the Morlet wavelet.
+    Returns a tuple (time-frequency matrix, frequencies, times)
+    """
+    if not freqs:
+        # define some default LFP frequencies of interest
+        freqlist = [np.arange(1, 13), np.arange(15, 30, 3), np.arange(35, 100, 5)]
+        freqs = np.concatenate(freqlist)
+
+    dt = series.index[1] - series.index[0]
+    wids = 1. / (freqs * dt)  # widths need to be in samples, not seconds
+    wavelet = lambda N, w: ssig.morlet(N, w=2*np.pi, s=w)
+    tf = ssig.cwt(series.values, wavelet, wids)
+    return pd.DataFrame(tf.T, columns=freqs, index=series.index)
+
+
 
 def evtsplit(df, ts, Tpre, Tpost, t0=0):
     """

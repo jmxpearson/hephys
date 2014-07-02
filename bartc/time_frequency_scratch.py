@@ -26,4 +26,4 @@ percent_overlap = .95
 
 spec = avg_spectrogram(channel, window, percent_overlap, stops, Tpre, Tpost)
 
-plot_spectrogram(spec.values.T, spec.columns, spec.index)
+plot_spectrogram(spec)
