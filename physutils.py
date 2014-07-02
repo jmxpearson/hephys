@@ -3,6 +3,8 @@ import numpy as np
 import pandas as pd
 import pandas.io.pytables as pdtbl
 import scipy.signal as ssig
+from matplotlib.mlab import specgram
+import matplotlib.pyplot as plt
 import warnings
 
 def make_path(*tup):
@@ -80,20 +82,68 @@ def smooth(df, wid):
     y = y[(wlen/2 - 1):-wlen/2]
     return pd.DataFrame(y, index=df.index, columns=[''])
 
-def evtsplit(df, ts, startT, endT, t0=0):
+def spectrogram(series, winlen, frac_overlap):
+    """
+    Given a Pandas series, a window length (in s), and a percent 
+    overlap between successive windows, calculate the spectrogram
+    based on the moving window stft.
+    Returns a tuple (spectrum, frequencies, times)
+    Uses matplotlib.mlab.specgram
+    """
+    dt = series.index[1] - series.index[0]
+    sr = 1. / dt
+    Nwin = int(np.ceil(winlen / dt))
+    Npad = int(2 ** np.ceil(np.log2(Nwin)))  # next closest power of 2 to pad to
+    Noverlap = min(int(np.ceil(frac_overlap * Nwin)), Nwin - 1)
+
+    return specgram(series.values, NFFT=Nwin, Fs=sr, noverlap=Noverlap, 
+        pad_to=Npad)
+
+def avg_spectrogram(series, winlen, frac_overlap, events, Tpre, Tpost):
+    """
+    Given a Pandas series, split it into chunks of (Tpre, Tpost) around
+    events, do the spectrogram on each, average, and returns a DataFrame
+    with time as the index and frequency as the column label.
+    Note that, as per evtsplit, events before the events have Tpre < 0.
+    """
+    df = evtsplit(series, events, Tpre, Tpost)
+    spectra = [spectrogram(ser, winlen, frac_overlap) for (name, ser) in df.iteritems()]
+    specmats = map(lambda x: x[0], spectra)
+    times = spectra[0][2] + Tpre
+    freqs = spectra[0][1]
+    allspecs = np.dstack(specmats)
+    meanspec = np.mean(allspecs, axis=2)
+
+    return pd.DataFrame(meanspec.T, index=times, columns=freqs)
+
+def plot_spectrogram(spectrum, frequencies, times):
+    """
+    Plot spectrogram. Modeled after the matplotlib lib code.
+    """
+    Z = np.flipud(10 * np.log10(spectrum))
+    extent = times[0], times[-1], frequencies[0], frequencies[-1]
+    im = plt.imshow(Z, extent=extent)
+    plt.axis('auto')
+    plt.colorbar(label='Power (dB/Hz)')
+    plt.xlabel('Time (s)')
+    plt.ylabel('Frequency (Hz)')
+    plt.show()
+    return im
+
+def evtsplit(df, ts, Tpre, Tpost, t0=0):
     """
     Split time series data into peri-event chunks. Data are in df.
     Times of events around which to split are in ts. 
-    Code grabs startT:endT bins relative to event, so times before 
-    the event have startT < 0. The first time bin is assumed to have 
+    Code grabs Tpre:Tpost bins relative to event, so times before 
+    the event have Tpre < 0. The first time bin is assumed to have 
     timestamp t0.
     """
     dt = df.index[1] - df.index[0]
     xx = df.values.squeeze()
 
     nevt = ts.size
-    nstart = np.ceil(startT / dt)
-    nend = np.ceil(endT / dt)
+    nstart = np.ceil(Tpre / dt)
+    nend = np.ceil(Tpost / dt)
     binT = np.arange(nstart, nend) * dt
 
     evtrel = ts - t0
