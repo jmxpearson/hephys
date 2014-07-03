@@ -29,7 +29,5 @@ spec = avg_time_frequency(channel, spectrogram, stops, Tpre, Tpost, window, perc
 plot_time_frequency(spec)
 
 tf = avg_time_frequency(channel, continuous_wavelet, stops, Tpre, Tpost)
-tfint = interpolate_time_frequency(tf)
 
-plot_time_frequency(tfint)
-
+plot_time_frequency(tf)

@@ -4,6 +4,7 @@ import pandas as pd
 import pandas.io.pytables as pdtbl
 import scipy.signal as ssig
 from matplotlib.mlab import specgram, griddata
+from matplotlib.image import NonUniformImage
 import matplotlib.pyplot as plt
 import warnings
 
@@ -116,8 +117,9 @@ def continuous_wavelet(series, freqs=None):
     wids = 1. / (freqs * dt)  # widths need to be in samples, not seconds
     # the way scipy parameterizes morlet, increasing s decreases the width,
     # so need to invert to produce a width parameterization
-    rwavelet = lambda N, wid: np.real(ssig.morlet(N, w=5, s=1. / wid))
-    iwavelet = lambda N, wid: np.imag(ssig.morlet(N, w=5, s=1. / wid))
+    # also, multiply by dt to get wavelet as a density
+    rwavelet = lambda N, wid: dt * np.real(ssig.morlet(N, w=5, s=1. / wid))
+    iwavelet = lambda N, wid: dt * np.imag(ssig.morlet(N, w=5, s=1. / wid))
     tfr = ssig.cwt(series.values, rwavelet, wids)
     tfi = ssig.cwt(series.values, iwavelet, wids)
     tf = tfr ** 2 + tfi ** 2
@@ -126,33 +128,24 @@ def continuous_wavelet(series, freqs=None):
 
 def plot_time_frequency(spectrum):
     """
-    Time-frequency plot. Modeled after the matplotlib lib code.
+    Time-frequency plot. Modeled after image_nonuniform.py example 
     spectrum is a dataframe with frequencies in columns and time in rows
     """
-    Z = np.flipud(10 * np.log10(spectrum.values.T))
-    frequencies = spectrum.columns
     times = spectrum.index
-    extent = times[0], times[-1], frequencies[0], frequencies[-1]
-    im = plt.imshow(Z, extent=extent)
-    plt.axis('auto')
-    plt.colorbar(label='Power (dB/Hz)')
+    freqs = spectrum.columns
+    z = 10 * np.log10(spectrum.T)
+    ax = plt.figure().add_subplot(111)
+    extent = (times[0], times[-1], freqs[0], freqs[-1])
+    im = NonUniformImage(ax, interpolation='bilinear', extent=extent)
+    im.set_data(times, freqs, z)
+    ax.set_xlim(extent[0], extent[1])
+    ax.set_ylim(extent[2], extent[3])
+    ax.images.append(im)
+    plt.colorbar(im, label='Power (dB/Hz)')
     plt.xlabel('Time (s)')
     plt.ylabel('Frequency (Hz)')
     plt.show()
     return im
-
-def interpolate_time_frequency(df, N=50):
-    # uses interpolation to get time-frequency data on a uniform frequency
-    # space; returns a dataframe
-    # N is the number of points to interpolate to in frequency space
-    freqs = df.columns
-    times = df.index
-    ts, fs = np.meshgrid(times, freqs, indexing='ij')
-    newfreqs = np.linspace(freqs[0], freqs[-1], N)
-    ti, fi = np.meshgrid(times, newfreqs, indexing='ij')
-    newdata = griddata(ts.flatten(), fs.flatten(), df.values.flatten(), ti, fi)
-    newdf = pd.DataFrame(newdata, index=times, columns=newfreqs)
-    return newdf
 
 def avg_time_frequency(series, tffun, events, Tpre, Tpost, *args, **kwargs):
     """
