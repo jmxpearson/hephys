@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import pandas.io.pytables as pdtbl
 import scipy.signal as ssig
-from matplotlib.mlab import specgram
+from matplotlib.mlab import specgram, griddata
 import matplotlib.pyplot as plt
 import warnings
 
@@ -114,11 +114,14 @@ def continuous_wavelet(series, freqs=None):
 
     dt = series.index[1] - series.index[0]
     wids = 1. / (freqs * dt)  # widths need to be in samples, not seconds
-    rwavelet = lambda N, w: np.real(ssig.morlet(N, w=2*np.pi, s=w))
-    iwavelet = lambda N, w: np.imag(ssig.morlet(N, w=2*np.pi, s=w))
+    # the way scipy parameterizes morlet, increasing s decreases the width,
+    # so need to invert to produce a width parameterization
+    rwavelet = lambda N, wid: np.real(ssig.morlet(N, w=5, s=1. / wid))
+    iwavelet = lambda N, wid: np.imag(ssig.morlet(N, w=5, s=1. / wid))
     tfr = ssig.cwt(series.values, rwavelet, wids)
     tfi = ssig.cwt(series.values, iwavelet, wids)
     tf = tfr ** 2 + tfi ** 2
+
     return pd.DataFrame(tf.T, columns=freqs, index=series.index)
 
 def plot_time_frequency(spectrum):
@@ -137,6 +140,19 @@ def plot_time_frequency(spectrum):
     plt.ylabel('Frequency (Hz)')
     plt.show()
     return im
+
+def interpolate_time_frequency(df, N=50):
+    # uses interpolation to get time-frequency data on a uniform frequency
+    # space; returns a dataframe
+    # N is the number of points to interpolate to in frequency space
+    freqs = df.columns
+    times = df.index
+    ts, fs = np.meshgrid(times, freqs, indexing='ij')
+    newfreqs = np.linspace(freqs[0], freqs[-1], N)
+    ti, fi = np.meshgrid(times, newfreqs, indexing='ij')
+    newdata = griddata(ts.flatten(), fs.flatten(), df.values.flatten(), ti, fi)
+    newdf = pd.DataFrame(newdata, index=times, columns=newfreqs)
+    return newdf
 
 def avg_time_frequency(series, tffun, events, Tpre, Tpost, *args, **kwargs):
     """

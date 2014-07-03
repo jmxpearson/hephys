@@ -3,7 +3,7 @@ from physclasses import *
 import os
 
 os.chdir(os.path.expanduser('~/code/hephys/bartc'))
-dtup = 17, 2
+dtup = 17, 2, 17
 
 # open data file
 dbname = os.path.expanduser('~/data/bartc/plexdata/bartc.hdf5')
@@ -13,11 +13,11 @@ print "Fetching Data..."
 lfp = fetch_all_such_LFP(dbname, *dtup)
 
 # get events
-evt = fetch(dbname, 'events', *dtup)
+evt = fetch(dbname, 'events', *dtup[:2])
 stops = evt['stop inflating'].dropna()
 
 # brabe a particular channel
-channel = lfp.dataframe[17]
+channel = lfp
 
 Tpre = -1.5
 Tpost = 0.5
@@ -29,5 +29,7 @@ spec = avg_time_frequency(channel, spectrogram, stops, Tpre, Tpost, window, perc
 plot_time_frequency(spec)
 
 tf = avg_time_frequency(channel, continuous_wavelet, stops, Tpre, Tpost)
+tfint = interpolate_time_frequency(tf)
 
-plot_time_frequency(tf)
+plot_time_frequency(tfint)
+
