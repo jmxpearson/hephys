@@ -101,6 +101,28 @@ class LFPset(object):
             t0).unstack()
         return self.dataframe.apply(split_to_series)
 
+    def avg_time_frequency(self, channel, times, Tpre, Tpost, method='wav', doplot=True, **kwargs):
+        """
+        Do a time frequency decomposition, averaging across chunks split at 
+        times. **kwargs are passed on as parameters to the method call:
+        method 'wav': w parameter
+        method 'spec': window length (in s) and fraction overlap
+        """
+        series = self.dataframe[channel]
+        if method == 'wav':
+            callback = physutils.continuous_wavelet
+        else:
+            callback = physutils.spectrogram
+
+        tf = physutils.avg_time_frequency(series, callback, times, Tpre, 
+            Tpost, **kwargs)
+
+        if doplot:
+            physutils.plot_time_frequency(tf)
+
+        return tf
+
+
 
 def fetch_LFP(dbname, *tup):
     """ 

@@ -24,10 +24,6 @@ Tpost = 0.5
 window = 0.250
 percent_overlap = .95
 
-spec = avg_time_frequency(channel, spectrogram, stops, Tpre, Tpost, window, percent_overlap) 
+spec = lfp.avg_time_frequency(17, stops, Tpre, Tpost, method='spec', winlen=window, frac_overlap=percent_overlap)
 
-plot_time_frequency(spec)
-
-tf = avg_time_frequency(channel, continuous_wavelet, stops, Tpre, Tpost)
-
-plot_time_frequency(tf)
+wav = lfp.avg_time_frequency(17, stops, Tpre, Tpost, method='wav')
