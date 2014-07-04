@@ -101,11 +101,10 @@ def spectrogram(series, winlen, frac_overlap):
         pad_to=Npad)
     return pd.DataFrame(spec[0].T, columns=spec[1], index=spec[2] + series.index[0])
 
-def continuous_wavelet(series, freqs=None):
+def continuous_wavelet(series, freqs=None, *args, **kwargs):
     """
-    Construct a continuous wavelet transform 
-    time-frequency plot for the data series.
-    pars are parameters for the Morlet wavelet.
+    Construct a continuous wavelet transform for the data series.
+    Extra pars are parameters for the Morlet wavelet.
     Returns a tuple (time-frequency matrix, frequencies, times)
     """
     if not freqs:
@@ -114,17 +113,31 @@ def continuous_wavelet(series, freqs=None):
         freqs = np.concatenate(freqlist)
 
     dt = series.index[1] - series.index[0]
-    wids = 1. / (freqs * dt)  # widths need to be in samples, not seconds
-    # the way scipy parameterizes morlet, increasing s decreases the width,
-    # so need to invert to produce a width parameterization
-    # also, multiply by dt to get wavelet as a density
-    rwavelet = lambda N, wid: dt * np.real(ssig.morlet(N, w=5, s=1. / wid))
-    iwavelet = lambda N, wid: dt * np.imag(ssig.morlet(N, w=5, s=1. / wid))
-    tfr = ssig.cwt(series.values, rwavelet, wids)
-    tfi = ssig.cwt(series.values, iwavelet, wids)
+    scales = 1. / (freqs * dt)  # widths need to be in samples, not seconds
+    wav = make_morlet(*args, **kwargs)
+    rwavelet = lambda N, b: np.real(wav(N, b))
+    iwavelet = lambda N, b: np.imag(wav(N, b))
+    tfr = ssig.cwt(series.values, rwavelet, scales)
+    tfi = ssig.cwt(series.values, iwavelet, scales)
     tf = tfr ** 2 + tfi ** 2
 
     return pd.DataFrame(tf.T, columns=freqs, index=series.index)
+
+def make_morlet(w=np.sqrt(2) * np.pi):
+    """
+    Coded to conform to the requirements of scipy.signal.cwt.
+    WARNING: scipy.signal.morlet does not follow the recommended convention!
+    Default value of w corresponds (up to a rescaling) to the 1-1 
+    complex Morlet wavelet in Matlab.
+    """
+    def wav(N, b):
+        x = (np.arange(0, N) - (N - 1.0) / 2) / b
+        output = np.exp(1j * w * x) - np.exp(-0.5 * (w ** 2))
+        output *= np.exp(-0.5 * (x ** 2)) * (np.pi ** (-0.25))
+        output /= np.sqrt(b)
+        return output
+
+    return wav
 
 def plot_time_frequency(spectrum):
     """
