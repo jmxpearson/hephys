@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import pandas.io.pytables as pdtbl
 import scipy.signal as ssig
-from matplotlib.mlab import specgram, griddata
+from matplotlib.mlab import specgram
 from matplotlib.image import NonUniformImage
 import matplotlib.pyplot as plt
 import warnings

@@ -19,8 +19,9 @@ from scipy.signal import hilbert
 import pandas as pd
 
 class LFPset(object):
-    def __init__(self, dataframe, meta=None):
-        self.dataframe = dataframe
+    def __init__(self, data, meta=None):
+        # wrap passed data in constructor in case it's a series
+        self.dataframe = pd.DataFrame(data)
         self.meta = meta  # dict of metadata 
 
     def __getattr__(self, name):
