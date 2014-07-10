@@ -120,6 +120,8 @@ class LFPset(object):
 
         if doplot:
             im = physutils.plot_time_frequency(tf)
+        else:
+            im = None
 
         return tf, im
 
