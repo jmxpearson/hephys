@@ -16,9 +16,6 @@ lfp = fetch_all_such_LFP(dbname, *dtup)
 evt = fetch(dbname, 'events', *dtup[:2])
 stops = evt['stop inflating'].dropna()
 
-# brabe a particular channel
-channel = lfp
-
 Tpre = -1.5
 Tpost = 0.5
 window = 0.250

@@ -175,7 +175,7 @@ def avg_time_frequency(series, tffun, events, Tpre, Tpost, *args, **kwargs):
     times = spectra[0].index
     freqs = spectra[0].columns
     allspecs = np.dstack(specmats)
-    meanspec = np.mean(allspecs, axis=2)
+    meanspec = np.nanmean(allspecs, axis=2)
 
     return pd.DataFrame(meanspec, index=times, columns=freqs)
 
