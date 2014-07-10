@@ -10,7 +10,7 @@ dbname = os.path.expanduser('~/data/bartc/plexdata/bartc.hdf5')
 
 # get lfp data
 print "Fetching Data..."
-lfp = fetch_all_such_LFP(dbname, *dtup)
+lfp = fetch_all_such_LFP(dbname, *dtup).censor()
 
 # get events
 evt = fetch(dbname, 'events', *dtup[:2])
