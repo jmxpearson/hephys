@@ -114,7 +114,10 @@ def continuous_wavelet(series, freqs=None, *args, **kwargs):
 
     dt = series.index[1] - series.index[0]
     scales = 1. / (freqs * dt)  # widths need to be in samples, not seconds
-    wav = make_morlet(*args, **kwargs)
+    if 'w' in kwargs:
+        wav = make_morlet(kwargs['w'])
+    else:
+        wav = make_morlet(*args)
     rwavelet = lambda N, b: np.real(wav(N, b))
     iwavelet = lambda N, b: np.imag(wav(N, b))
     tfr = ssig.cwt(series.values, rwavelet, scales)
@@ -171,6 +174,8 @@ def avg_time_frequency(series, tffun, events, Tpre, Tpost, *args, **kwargs):
     """
     df = evtsplit(series, events, Tpre, Tpost)
     spectra = [tffun(ser, *args, **kwargs) for (name, ser) in df.iteritems()]
+    if 'normfun' in kwargs:
+        spectra = kwargs['normfun'](spectra)
     specmats = map(lambda x: x.values, spectra)
     times = spectra[0].index
     freqs = spectra[0].columns
@@ -179,6 +184,37 @@ def avg_time_frequency(series, tffun, events, Tpre, Tpost, *args, **kwargs):
 
     return pd.DataFrame(meanspec, index=times, columns=freqs)
 
+def norm_by_trial(timetuple):
+    """
+    Given a list (one per trial) of dataframes, return a function that
+    returns a list of the same type in which each trial is normalized by 
+    the mean of the dataframe values in the range given by timetuple.
+    """
+    def norm_by_range(df):
+        baseline = df[slice(*timetuple)].mean()
+        return df.div(baseline)
+
+    def normalize(framelist):
+        return map(norm_by_range, framelist)
+
+    return normalize
+
+def norm_by_mean(timetuple):
+    """
+    Given a list (one per trial) of dataframes, return a function that
+    returns a list of the same type in which all trials are normalized
+    by the mean (across time) of the mean (across frames) 
+    of the dataframe values in the range given by timetuple.
+    """
+    def get_baseline(df):
+        return df[slice(*timetuple)].mean()
+
+    def normalize(framelist):
+        all_baselines = map(get_baseline, framelist)
+        mean_baseline = reduce(lambda x, y: x + y, all_baselines) / len(framelist)
+        return map(lambda x: x.div(mean_baseline), framelist)
+
+    return normalize
 
 def evtsplit(df, ts, Tpre, Tpost, t0=0):
     """

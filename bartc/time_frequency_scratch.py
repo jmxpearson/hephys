@@ -24,3 +24,6 @@ percent_overlap = .95
 spec = lfp.avg_time_frequency(17, stops, Tpre, Tpost, method='spec', winlen=window, frac_overlap=percent_overlap)
 
 wav = lfp.avg_time_frequency(17, stops, Tpre, Tpost, method='wav')
+
+norm_range = (-1.5, -1.35)
+wav_normed = lfp.avg_time_frequency(17, stops, Tpre, Tpost, method='wav', normfun=norm_by_trial(norm_range))
