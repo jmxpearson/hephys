@@ -119,11 +119,11 @@ class LFPset(object):
             Tpost, **kwargs)
 
         if doplot:
-            im = physutils.plot_time_frequency(tf)
+            fig = physutils.plot_time_frequency(tf)
         else:
-            im = None
+            fig = None
 
-        return tf, im
+        return tf, fig
 
 
 

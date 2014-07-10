@@ -160,8 +160,7 @@ def plot_time_frequency(spectrum):
     plt.colorbar(im, label='Power (dB/Hz)')
     plt.xlabel('Time (s)')
     plt.ylabel('Frequency (Hz)')
-    plt.show()
-    return im
+    return plt.gcf() 
 
 def avg_time_frequency(series, tffun, events, Tpre, Tpost, *args, **kwargs):
     """
