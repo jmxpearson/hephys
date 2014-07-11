@@ -21,7 +21,7 @@ def make_time_frequency_plot(dtup, event_name, Tpre, Tpost, baseline_interval):
     all_wavs = []
     for channel in lfp.columns:
         # horrible kludge to exclude (16, 2, 22)
-        if (dtup, channel) in bad_channel_list: 
+        if dtup + (channel,) in bad_channel_list: 
             continue
         print "Channel " + str(channel)
         wav_normed, im = lfp.avg_time_frequency(channel, times, Tpre, Tpost, method='wav', doplot=False, normfun=norm_by_trial(baseline_interval))
