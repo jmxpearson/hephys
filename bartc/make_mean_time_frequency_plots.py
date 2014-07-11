@@ -1,3 +1,5 @@
+import matplotlib
+matplotlib.use('Agg')
 from matplotlib.backends.backend_pdf import PdfPages
 from physclasses import *
 from physutils import *

@@ -1,3 +1,5 @@
+import matplotlib
+matplotlib.use('Agg')
 from physutils import *
 from physclasses import *
 import os
