@@ -37,7 +37,7 @@ if __name__ == '__main__':
     setlist = pd.read_hdf(dbname, '/meta/lfplist')[['patient', 'dataset']].drop_duplicates()
 
     # get ready to write to file
-    fname = 'time_freqs.pdf'
+    fname = 'mean_time_freqs.pdf'
     event_name = 'stop inflating'
     Tpre = -1.5
     Tpost = 0.5
