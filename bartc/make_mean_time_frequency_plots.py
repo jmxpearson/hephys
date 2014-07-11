@@ -15,14 +15,20 @@ def make_time_frequency_plot(dtup, event_name, Tpre, Tpost, baseline_interval):
     evt = fetch(dbname, 'events', *dtup[:2])
     times = evt[event_name].dropna()
 
+    # horrible kludge to drop pathological channels
+    bad_channel_list = [(16, 2, 22), (18, 1, 32)]
+
     all_wavs = []
     for channel in lfp.columns:
+        # horrible kludge to exclude (16, 2, 22)
+        if (dtup, channel) in bad_channel_list: 
+            continue
         print "Channel " + str(channel)
         wav_normed, im = lfp.avg_time_frequency(channel, times, Tpre, Tpost, method='wav', doplot=False, normfun=norm_by_trial(baseline_interval))
         all_wavs.append(wav_normed)
 
-        # take mean power across all channels
-    all_wav_mean = reduce(lambda x, y: x + y, all_wavs) / len(all_wavs)
+    # take mean power across all channels
+    all_wav_mean = reduce(lambda x, y: x.add(y, fill_value=0), all_wavs) / len(all_wavs)
 
     fig = plot_time_frequency(all_wav_mean)
 

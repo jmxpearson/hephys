@@ -210,7 +210,7 @@ def norm_by_mean(timetuple):
 
     def normalize(framelist):
         all_baselines = map(get_baseline, framelist)
-        mean_baseline = reduce(lambda x, y: x + y, all_baselines) / len(framelist)
+        mean_baseline = reduce(lambda x, y: x.add(y, fill_value=0), all_baselines) / len(framelist)
         return map(lambda x: x.div(mean_baseline), framelist)
 
     return normalize
