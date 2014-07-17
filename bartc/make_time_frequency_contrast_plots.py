@@ -17,7 +17,7 @@ def make_time_frequency_plot(dtup, event_names, Tpre, Tpost, baseline_interval):
     wav_normed0, fig = lfp.avg_time_frequency(dtup[2], times0, Tpre, Tpost, method='wav', normfun=norm_by_trial(baseline_interval))
     wav_normed1, fig = lfp.avg_time_frequency(dtup[2], times1, Tpre, Tpost, method='wav', normfun=norm_by_trial(baseline_interval))
 
-    fig = plot_time_frequency(wav_normed1 / wav_normed0) 
+    fig = plot_time_frequency(wav_normed0 / wav_normed1) 
 
     return fig
 
@@ -33,7 +33,7 @@ if __name__ == '__main__':
 
     # get ready to write to file
     fname = 'stop_vs_pop_time_freqs.pdf'
-    event_names = ['stop inflating', 'popped']
+    event_names = ['popped', 'stop inflating']
     Tpre = -1.5
     Tpost = 0.5
     baseline_interval = (-1.5, -1.35)
@@ -44,7 +44,7 @@ if __name__ == '__main__':
         for idx, channel_inds in setlist.iterrows():
             dtup = tuple(channel_inds)
             make_time_frequency_plot(dtup, event_names, Tpre, Tpost, baseline_interval)
-            titlestr = "Channel: " + str(dtup) + "\nAlign: " + event_names[0] + " - " + event_names[1]
+            titlestr = "Channel: " + str(dtup) + "\nAlign: " + event_names[0] + " / " + event_names[1]
             plt.title(titlestr)
             pdf.savefig()
             plt.close()
