@@ -3,7 +3,7 @@ from physclasses import *
 from physutils import *
 import os
 
-def make_time_frequency_plot(dtup, event_name, Tpre, Tpost, baseline_interval):
+def make_time_frequency_plot(dtup, event_names, Tpre, Tpost, baseline_interval):
 
     # get lfp data
     print "Fetching data: " + str(dtup)
@@ -11,9 +11,13 @@ def make_time_frequency_plot(dtup, event_name, Tpre, Tpost, baseline_interval):
 
     # get events
     evt = fetch(dbname, 'events', *dtup[:2])
-    times = evt[event_name].dropna()
+    times0 = evt[event_names[0]].dropna()
+    times1 = evt[event_names[1]].dropna()
 
-    wav_normed, fig = lfp.avg_time_frequency(dtup[2], times, Tpre, Tpost, method='wav', normfun=norm_by_trial(baseline_interval))
+    wav_normed0, fig = lfp.avg_time_frequency(dtup[2], times0, Tpre, Tpost, method='wav', normfun=norm_by_trial(baseline_interval))
+    wav_normed1, fig = lfp.avg_time_frequency(dtup[2], times1, Tpre, Tpost, method='wav', normfun=norm_by_trial(baseline_interval))
+
+    fig = plot_time_frequency(wav_normed1 / wav_normed0) 
 
     return fig
 
@@ -28,8 +32,8 @@ if __name__ == '__main__':
     setlist = pd.read_hdf(dbname, '/meta/lfplist')
 
     # get ready to write to file
-    fname = 'pop_time_freqs.pdf'
-    event_name = 'popped'
+    fname = 'stop_vs_pop_time_freqs.pdf'
+    event_names = ['stop inflating', 'popped']
     Tpre = -1.5
     Tpost = 0.5
     baseline_interval = (-1.5, -1.35)
@@ -39,8 +43,8 @@ if __name__ == '__main__':
 
         for idx, channel_inds in setlist.iterrows():
             dtup = tuple(channel_inds)
-            make_time_frequency_plot(dtup, event_name, Tpre, Tpost, baseline_interval)
-            titlestr = "Channel: " + str(dtup) + "\nAlign: " + event_name
+            make_time_frequency_plot(dtup, event_names, Tpre, Tpost, baseline_interval)
+            titlestr = "Channel: " + str(dtup) + "\nAlign: " + event_names[0] + " - " + event_names[1]
             plt.title(titlestr)
             pdf.savefig()
             plt.close()
