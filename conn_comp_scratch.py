@@ -20,37 +20,48 @@ def rgb2gray(rgb):
     plt.imshow(img, cmap = cm.Greys_r)
     plt.show()
 
-bimg = rgb2gray(orig_img) < 0.999  # treat code black as True
+bimg = rgb2gray(orig_img) < 0.9  # treat code black as True
 
-clust_map = np.zeros(bimg.shape)
-uf = UnionFind()
 
-it = np.nditer(bimg, flags=['multi_index'])
-while not it.finished:
-    idx = it.multi_index
+def label_clusters(img):
+    clust_map = np.zeros(img.shape)
+    uf = UnionFind()
 
-    # now traverse matrix by rows
-    # if present cell is not background
-    if bimg[idx]:
-        uf.add(idx)  # add to union-find
-        if idx[0] > 0:
-            left = (idx[0] - 1, idx[1])
-            if uf.find(left):
-                uf.union(left, idx)  # attach to left neighbor
-        if idx[1] > 0:
-            above = (idx[0], idx[1] - 1)
-            if uf.find(above):
-                uf.union(above, idx)  # attach to upper neighbor
+    # first loop: traverse image by pixels, constructing union-find
+    # for connected components
+    it = np.nditer(img, flags=['multi_index'])
+    while not it.finished:
+        idx = it.multi_index
 
-    it.iternext()
+        # if present cell is not background
+        if img[idx]:
+            uf.add(idx)  # add to union-find
+            if idx[0] > 0:
+                left = (idx[0] - 1, idx[1])
+                if uf.find(left):
+                    uf.union(left, idx)  # attach to left neighbor
+            if idx[1] > 0:
+                above = (idx[0], idx[1] - 1)
+                if uf.find(above):
+                    uf.union(above, idx)  # attach to upper neighbor
 
-# second pass: label by root
-it = np.nditer(bimg, flags=['multi_index'])
-while not it.finished:
-    idx = it.multi_index
+        it.iternext()
 
-    if bimg[idx]:
-        clust_map[idx] = uf.find(idx)[0]
+    # get roots of union-find, construct a code dict to relabel them
+    # as integers
+    roots = set(map(lambda x: x[0], uf.nodes.values()))
+    code_dict = dict(zip(roots, np.arange(1, len(roots))))
 
-    it.iternext()
-print "foo"
+    # second pass: label by root
+    it = np.nditer(img, flags=['multi_index'])
+    while not it.finished:
+        idx = it.multi_index
+
+        if img[idx]:
+            clust_map[idx] = code_dict[uf.find(idx)[0]]
+
+        it.iternext()
+
+    return clust_map
+    
+clust_map = label_clusters(bimg)
