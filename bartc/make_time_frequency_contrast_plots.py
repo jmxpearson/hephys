@@ -14,8 +14,8 @@ def make_time_frequency_plot(dtup, event_names, Tpre, Tpost, baseline_interval):
     times0 = evt[event_names[0]].dropna()
     times1 = evt[event_names[1]].dropna()
 
-    wav_normed0, fig = lfp.avg_time_frequency(dtup[2], times0, Tpre, Tpost, method='wav', normfun=norm_by_trial(baseline_interval))
-    wav_normed1, fig = lfp.avg_time_frequency(dtup[2], times1, Tpre, Tpost, method='wav', normfun=norm_by_trial(baseline_interval))
+    wav_normed0, fig = lfp.avg_time_frequency(dtup[2], times0, Tpre, Tpost, method='wav', doplot=False, normfun=norm_by_trial(baseline_interval))
+    wav_normed1, fig = lfp.avg_time_frequency(dtup[2], times1, Tpre, Tpost, method='wav', doplot=False, normfun=norm_by_trial(baseline_interval))
 
     fig = plot_time_frequency(wav_normed0 / wav_normed1) 
 
@@ -46,5 +46,6 @@ if __name__ == '__main__':
             make_time_frequency_plot(dtup, event_names, Tpre, Tpost, baseline_interval)
             titlestr = "Channel: " + str(dtup) + "\nAlign: " + event_names[0] + " / " + event_names[1]
             plt.title(titlestr)
+            plt.ylim((0, 40))
             pdf.savefig()
             plt.close()
