@@ -166,11 +166,24 @@ def plot_time_frequency(spectrum):
 def avg_time_frequency(series, tffun, events, Tpre, Tpost, *args, **kwargs):
     """
     Given a Pandas series, split it into chunks of (Tpre, Tpost) around
-    events, do the time-frequency on each, average using the function tffun,
+    events, do the time-frequency on each using the function tffun,
     and return a DataFrame with time as the index and frequency as the 
     column label.
     Note that, as per evtsplit, events before the events have Tpre < 0.
     *args and **kwargs are passed on to tffun
+    """
+    specmats, times, freqs = per_event_time_frequency(series, tffun, events, Tpre, Tpost, *args, **kwargs)
+    allspecs = np.dstack(specmats)
+    meanspec = np.nanmean(allspecs, axis=2)
+
+    return pd.DataFrame(meanspec, index=times, columns=freqs)
+
+def per_event_time_frequency(series, tffun, events, Tpre, Tpost, *args, **kwargs):
+    """
+    Given a Pandas series, split it into chunks of (Tpre, Tpost) around
+    events, do the time-frequency on each using the function tffun,
+    and return a tuple containing the list of time-frequency matrices
+    (time x frequency), an array of times, and an array of frequencies.
     """
     df = evtsplit(series, events, Tpre, Tpost)
     spectra = [tffun(ser, *args, **kwargs) for (name, ser) in df.iteritems()]
@@ -179,10 +192,7 @@ def avg_time_frequency(series, tffun, events, Tpre, Tpost, *args, **kwargs):
     specmats = map(lambda x: x.values, spectra)
     times = spectra[0].index
     freqs = spectra[0].columns
-    allspecs = np.dstack(specmats)
-    meanspec = np.nanmean(allspecs, axis=2)
-
-    return pd.DataFrame(meanspec, index=times, columns=freqs)
+    return (specmats, times, freqs)
 
 def norm_by_trial(timetuple):
     """
