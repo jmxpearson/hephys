@@ -26,4 +26,4 @@ clust_map = label_clusters(bimg)
 plt.imshow(clust_map, cmap=cm.Greys)
 plt.show()
 
-aa, idx = np.unique(clust_map, return_inverse=True)
+counts = get_cluster_sizes(clust_map)

@@ -333,6 +333,16 @@ def label_clusters(img):
 
     return clust_map
 
+def get_cluster_sizes(img):
+    """
+    Given a numpy array of integers with cluster labels (nonclusters 
+    labeled 0), return an array of cluster sizes.
+    """
+    counts = np.bincount(img.ravel())  # get counts of each index
+    counts = counts[1:]  # get rid of "cluster" labeled 0
+    counts = counts[np.nonzero(counts)]  # get rid of clusters for unused inds
+    return counts
+    
 def fetch(dbname, node, *args):
     """
     Given a node ('lfp', 'spikes', 'events', 'censor'), and
