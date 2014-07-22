@@ -6,6 +6,7 @@ import scipy.signal as ssig
 from matplotlib.mlab import specgram
 from matplotlib.image import NonUniformImage
 import matplotlib.pyplot as plt
+from unionfind import UnionFind
 import warnings
 
 def make_path(*tup):
@@ -284,6 +285,53 @@ def dfbandlimit(df, filters=None):
     allbands.columns = bandnames
 
     return allbands
+
+def label_clusters(img):
+    """
+    Given a numpy array of Booleans, labels all False entries with 0 and
+    all True entries within a connected component by a unique integer.
+    Assumes a 4-neighborhood for connectivity. Returns labeled array
+    of same shape as input.
+    """
+    clust_map = np.zeros(img.shape)
+    uf = UnionFind()
+
+    # first loop: traverse image by pixels, constructing union-find
+    # for connected components
+    it = np.nditer(img, flags=['multi_index'])
+    while not it.finished:
+        idx = it.multi_index
+
+        # if present cell is not background
+        if img[idx]:
+            uf.add(idx)  # add to union-find
+            if idx[0] > 0:
+                left = (idx[0] - 1, idx[1])
+                if uf.find(left):
+                    uf.union(left, idx)  # attach to left neighbor
+            if idx[1] > 0:
+                above = (idx[0], idx[1] - 1)
+                if uf.find(above):
+                    uf.union(above, idx)  # attach to upper neighbor
+
+        it.iternext()
+
+    # get roots of union-find, construct a code dict to relabel them
+    # as integers
+    roots = set(map(lambda x: x[0], uf.nodes.values()))
+    code_dict = dict(zip(roots, np.arange(1, len(roots))))
+
+    # second pass: label by root
+    it = np.nditer(img, flags=['multi_index'])
+    while not it.finished:
+        idx = it.multi_index
+
+        if img[idx]:
+            clust_map[idx] = code_dict[uf.find(idx)[0]]
+
+        it.iternext()
+
+    return clust_map
 
 def fetch(dbname, node, *args):
     """
