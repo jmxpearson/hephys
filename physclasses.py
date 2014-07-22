@@ -125,6 +125,32 @@ class LFPset(object):
 
         return tf, fig
 
+    def contrast_time_frequency(self, channel, times, Tpre, Tpost, method='wav', doplot=True, **kwargs):
+        """
+        Do a contrast analysis for two sets of events. times is an iterable
+        containing times for each. Returned value is a ratio of time-frequency
+        power in the first set vs. the second. **kwargs are passed on as 
+        parameters to the method call:
+        method 'wav': w parameter
+        method 'spec': window length (in s) and fraction overlap
+        """
+        series = self.dataframe[channel]
+        if method == 'wav':
+            callback = physutils.continuous_wavelet
+        else:
+            callback = physutils.spectrogram
+
+        tf0 = physutils.avg_time_frequency(series, callback, times[0], Tpre, 
+            Tpost, **kwargs)
+        tf1 = physutils.avg_time_frequency(series, callback, times[1], Tpre, 
+            Tpost, **kwargs)
+
+        if doplot:
+            fig = physutils.plot_time_frequency(tf0 / tf1) 
+        else:
+            fig = None
+
+        return tf0.div(tf1), fig
 
 
 def fetch_LFP(dbname, *tup):

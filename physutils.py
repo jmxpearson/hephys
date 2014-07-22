@@ -178,22 +178,6 @@ def avg_time_frequency(series, tffun, events, Tpre, Tpost, *args, **kwargs):
 
     return pd.DataFrame(meanspec, index=times, columns=freqs)
 
-def per_event_time_frequency(series, tffun, events, Tpre, Tpost, *args, **kwargs):
-    """
-    Given a Pandas series, split it into chunks of (Tpre, Tpost) around
-    events, do the time-frequency on each using the function tffun,
-    and return a tuple containing the list of time-frequency matrices
-    (time x frequency), an array of times, and an array of frequencies.
-    """
-    df = evtsplit(series, events, Tpre, Tpost)
-    spectra = [tffun(ser, *args, **kwargs) for (name, ser) in df.iteritems()]
-    if 'normfun' in kwargs:
-        spectra = kwargs['normfun'](spectra)
-    specmats = map(lambda x: x.values, spectra)
-    times = spectra[0].index
-    freqs = spectra[0].columns
-    return (specmats, times, freqs)
-
 def norm_by_trial(timetuple):
     """
     Given a list (one per trial) of dataframes, return a function that
@@ -225,6 +209,54 @@ def norm_by_mean(timetuple):
         return map(lambda x: x.div(mean_baseline), framelist)
 
     return normalize
+
+def per_event_time_frequency(series, tffun, events, Tpre, Tpost, *args, **kwargs):
+    """
+    Given a Pandas series, split it into chunks of (Tpre, Tpost) around
+    events, do the time-frequency on each using the function tffun,
+    and return a tuple containing the list of time-frequency matrices
+    (time x frequency), an array of times, and an array of frequencies.
+    """
+    df = evtsplit(series, events, Tpre, Tpost)
+    spectra = [tffun(ser, *args, **kwargs) for (name, ser) in df.iteritems()]
+    if 'normfun' in kwargs:
+        spectra = kwargs['normfun'](spectra)
+    specmats = map(lambda x: x.values, spectra)
+    times = spectra[0].index
+    freqs = spectra[0].columns
+    return (specmats, times, freqs)
+
+def make_thresholded_diff(arraylist, labels, lo=None, hi=None):
+    """
+    Given a list of arrays and an array of labels designating conditions, 
+    calculate the mean for each label on a decibel scale. Return True 
+    wherever the difference between the arrays exceeds either lo or hi 
+    (specified in dB).
+    """
+    multarray = np.array(arraylist)
+    arr0 = multarray[labels == 0]
+    arr1 = multarray[labels == 1]
+    m0 = np.nanmean(arr0, 0)
+    m1 = np.nanmean(arr1, 0)
+    z0 = 10 * np.log10(m0)
+    z1 = 10 * np.log10(m1)
+    
+    if lo:
+        exceeds_low = z0 - z1 < lo
+    else:
+        exceeds_low = np.zeros_like(z0)
+        
+    if hi:
+        exceeds_hi = z0 - z1 > hi
+    else:
+        exceeds_hi = np.zeros_like(z0)
+    
+    return np.logical_or(exceeds_low, exceeds_hi)
+
+def find_significant_clusters(series, tffun, events, Tpre, Tpost, thresholds, niter, *args, **kwargs):
+    """
+    Given a data series, a time-frequency analysis method
+    """
 
 def evtsplit(df, ts, Tpre, Tpost, t0=0):
     """
