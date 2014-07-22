@@ -152,6 +152,59 @@ class LFPset(object):
 
         return tf0.div(tf1), fig
 
+    def significant_time_frequency(self, channel, times, Tpre, Tpost, thresh, niter=1000, pval=0.05, method='wav', doplot=True, **kwargs):
+        """
+        Given a data series determined by channel, a two-element iterable, 
+        times, containing times for a pair of events, pre and post-event 
+        windows to grab, a length 1 threshold tuple (for symmetric 
+        thresholding) or a pair of thresholds (lo, hi) at which to 
+        cut clusters, a number of bootstrap iterations, and a p-value for
+        statistical significance,
+        return a time-frequency dataframe (suitable for plotting) containing
+        the statistically significant clusters in the contrast between the 
+        two conditions (times[0] - times[1]).
+        """
+        series = self.dataframe[channel]
+        if method == 'wav':
+            callback = physutils.continuous_wavelet
+        else:
+            callback = physutils.spectrogram
+
+        # make a dataframe containing all times, labeled by event type
+        t0 = pd.DataFrame({'time': times[0], 'label': 0})
+        t1 = pd.DataFrame({'time': times[1], 'label': 1})
+        alltimes = pd.concat([t0, t1])
+
+        # get time-frequency matrix for each event
+        spectra, taxis, faxis = physutils.per_event_time_frequency(series,
+            callback, alltimes['time'], Tpre, Tpost, **kwargs)
+
+        if len(thresh) == 1:
+            thlo = -thresh[0]
+            thhi = thresh[0]
+        else:
+            thlo = thresh[0]
+            thhi = thresh[1]
+
+        # now loop
+        cluster_sizes = np.array()
+        for ind in np.arange(niter):
+            labels = np.random.permutation(alltimes['label'])
+            pos = physutils.make_thresholded_diff(spectra, labels, lo=None, hi=thhi)
+            neg = physutils.make_thresholded_diff(spectra, labels, lo=thlo, hi=None)
+
+            posclus = physutils.label_clusters(pos)
+            negclus = physutils.label_clusters(neg)
+
+            cluster_sizes = np.concatenate([
+                cluster_sizes,
+                physutils.get_cluster_sizes(posclus), 
+                -1 * physutils.get_cluster_sizes(negclus)
+                ])
+
+
+
+
 
 def fetch_LFP(dbname, *tup):
     """ 

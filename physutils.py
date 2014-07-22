@@ -253,10 +253,6 @@ def make_thresholded_diff(arraylist, labels, lo=None, hi=None):
     
     return np.logical_or(exceeds_low, exceeds_hi)
 
-def find_significant_clusters(series, tffun, events, Tpre, Tpost, thresholds, niter, *args, **kwargs):
-    """
-    Given a data series, a time-frequency analysis method
-    """
 
 def evtsplit(df, ts, Tpre, Tpost, t0=0):
     """
