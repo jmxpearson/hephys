@@ -22,8 +22,13 @@ def rgb2gray(rgb):
 
 bimg = rgb2gray(orig_img) < 0.9  # treat code black as True
 
-
 def label_clusters(img):
+    """
+    Given a numpy array of Booleans, labels all False entries with 0 and
+    all True entries within a connected component by a unique integer.
+    Assumes a 4-neighborhood for connectivity. Returns labeled array
+    of same shape as input.
+    """
     clust_map = np.zeros(img.shape)
     uf = UnionFind()
 
@@ -63,5 +68,5 @@ def label_clusters(img):
         it.iternext()
 
     return clust_map
-    
+
 clust_map = label_clusters(bimg)
