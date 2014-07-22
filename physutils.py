@@ -329,7 +329,7 @@ def label_clusters(img):
     # get roots of union-find, construct a code dict to relabel them
     # as integers
     roots = set(map(lambda x: x[0], uf.nodes.values()))
-    code_dict = dict(zip(roots, np.arange(1, len(roots))))
+    code_dict = dict(zip(roots, np.arange(1, len(roots) + 1)))
 
     # second pass: label by root
     it = np.nditer(img, flags=['multi_index'])
