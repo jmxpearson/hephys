@@ -293,7 +293,7 @@ def label_clusters(img):
     Assumes a 4-neighborhood for connectivity. Returns labeled array
     of same shape as input.
     """
-    clust_map = np.zeros(img.shape)
+    clust_map = np.zeros(img.shape, dtype='int64')
     uf = UnionFind()
 
     # first loop: traverse image by pixels, constructing union-find
