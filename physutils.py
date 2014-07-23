@@ -173,6 +173,14 @@ def avg_time_frequency(series, tffun, events, Tpre, Tpost, *args, **kwargs):
     *args and **kwargs are passed on to tffun
     """
     specmats, times, freqs = per_event_time_frequency(series, tffun, events, Tpre, Tpost, *args, **kwargs)
+    
+    return mean_from_events(specmats, times, freqs)
+
+def mean_from_events(specmats, times, freqs):
+    """
+    Given a list containing time-frequency spectra, average them and
+    return a dataframe (time x frequency).
+    """
     allspecs = np.dstack(specmats)
     meanspec = np.nanmean(allspecs, axis=2)
 
