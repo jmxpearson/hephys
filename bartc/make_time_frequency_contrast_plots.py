@@ -14,12 +14,14 @@ def make_time_frequency_plot(dtup, event_names, Tpre, Tpost, baseline_interval):
     times0 = evt[event_names[0]].dropna()
     times1 = evt[event_names[1]].dropna()
 
-    wav_normed0, fig = lfp.avg_time_frequency(dtup[2], times0, Tpre, Tpost, method='wav', doplot=False, normfun=norm_by_trial(baseline_interval))
-    wav_normed1, fig = lfp.avg_time_frequency(dtup[2], times1, Tpre, Tpost, method='wav', doplot=False, normfun=norm_by_trial(baseline_interval))
+    contr_tf, fig1 = lfp.contrast_time_frequency(17, [times0, times1], Tpre, Tpost, method='wav', normfun=norm_by_trial(baseline_interval), 
+        doplot=True)
 
-    fig = plot_time_frequency(wav_normed0 / wav_normed1) 
+    mcontr, fig2 = lfp.significant_time_frequency(17, [times0, times1], Tpre, 
+        Tpost, thresh=(2.5,), niter=1000, method='wav', doplot=True, 
+        normfun=norm_by_trial(baseline_interval))
 
-    return fig
+    return fig1, fig2
 
 if __name__ == '__main__':
 
@@ -33,7 +35,7 @@ if __name__ == '__main__':
 
     # get ready to write to file
     fname = 'stop_vs_pop_time_freqs.pdf'
-    event_names = ['popped', 'stop inflating']
+    event_names = ['stop inflating', 'popped']
     Tpre = -1.5
     Tpost = 0.5
     baseline_interval = (-1.5, -1.35)
@@ -43,9 +45,14 @@ if __name__ == '__main__':
 
         for idx, channel_inds in setlist.iterrows():
             dtup = tuple(channel_inds)
-            make_time_frequency_plot(dtup, event_names, Tpre, Tpost, baseline_interval)
+            figs = make_time_frequency_plot(dtup, event_names, Tpre, Tpost, baseline_interval)
             titlestr = "Channel: " + str(dtup) + "\nAlign: " + event_names[0] + " / " + event_names[1]
-            plt.title(titlestr)
-            plt.ylim((0, 40))
-            pdf.savefig()
-            plt.close()
+            for f in figs:
+                f.suptitle(titlestr)
+                f.gca().set_ylim(0, 40)
+                pdf.savefig(f)
+                plt.close(f)
+            # plt.title(titlestr)
+            # plt.ylim((0, 40))
+            # pdf.savefig()
+            # plt.close()
