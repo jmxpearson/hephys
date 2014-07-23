@@ -143,7 +143,7 @@ def make_morlet(w=np.sqrt(2) * np.pi):
 
     return wav
 
-def plot_time_frequency(spectrum):
+def plot_time_frequency(spectrum, **kwargs):
     """
     Time-frequency plot. Modeled after image_nonuniform.py example 
     spectrum is a dataframe with frequencies in columns and time in rows
@@ -155,6 +155,8 @@ def plot_time_frequency(spectrum):
     extent = (times[0], times[-1], freqs[0], freqs[-1])
     im = NonUniformImage(ax, interpolation='bilinear', extent=extent)
     im.set_data(times, freqs, z)
+    if 'clim' in kwargs:
+        im.set_clim(kwargs['clim'])
     ax.set_xlim(extent[0], extent[1])
     ax.set_ylim(extent[2], extent[3])
     ax.images.append(im)

@@ -187,7 +187,7 @@ class LFPset(object):
             thhi = thresh[1]
 
         # now loop
-        cluster_sizes = np.array()
+        cluster_sizes = []
         for ind in np.arange(niter):
             labels = np.random.permutation(alltimes['label'])
             pos = physutils.make_thresholded_diff(spectra, labels, lo=None, hi=thhi)
@@ -202,8 +202,34 @@ class LFPset(object):
                 -1 * physutils.get_cluster_sizes(negclus)
                 ])
 
+        # extract cluster size thresholds based on null distribution
+        plo = pval / 2.0
+        phi = 1 - plo
+        Nlo = np.floor(len(cluster_sizes) * plo)
+        Nhi = np.ceil(len(cluster_sizes) * phi)
+        Clo = cluster_sizes[Nlo]
+        Chi = cluster_sizes[Nhi]
 
+        # get boolean significant clusters for true labels
+        truelabels = alltimes['label'].values
+        signif = physutils.threshold_clusters(spectra, truelabels, lo=thlo,
+            hi=thhi, keeplo=Clo, keephi=Chi)
 
+        # make contrast image
+        img0 = physutils.mean_from_events(np.array(spectra)[truelabels == 0], taxis, faxis)
+        img1 = physutils.mean_from_events(np.array(spectra)[truelabels == 1], taxis, faxis)
+        contrast = img0 / img1
+
+        # make masked contrast
+        mcontrast = contrast.copy().mask(~signif)
+
+        if doplot:
+            color_lims = (np.amin(10 * np.log10(contrast.values)), np.amax(10 * np.log10(contrast.values)))
+            fig = physutils.plot_time_frequency(mcontrast, clim=color_lims) 
+        else:
+            fig = None
+
+        return mcontrast, fig 
 
 
 def fetch_LFP(dbname, *tup):
