@@ -150,7 +150,7 @@ class LFPset(object):
         else:
             fig = None
 
-        return tf0.div(tf1), fig
+        return tf0 / tf1, fig
 
     def significant_time_frequency(self, channel, times, Tpre, Tpost, thresh, niter=1000, pval=0.05, method='wav', doplot=True, **kwargs):
         """

@@ -241,9 +241,10 @@ def make_thresholded_diff(arraylist, labels, lo=None, hi=None):
     wherever the difference between the arrays exceeds either lo or hi 
     (specified in dB).
     """
-    multarray = np.array(arraylist)
-    arr0 = multarray[labels == 0]
-    arr1 = multarray[labels == 1]
+    multarray = np.array(arraylist) # convert to array along dim 0
+    lls = np.array(labels)  # make sure this is an array
+    arr0 = multarray[lls == 0]
+    arr1 = multarray[lls == 1]
     m0 = np.nanmean(arr0, 0)
     m1 = np.nanmean(arr1, 0)
     z0 = 10 * np.log10(m0)
