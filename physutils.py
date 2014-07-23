@@ -262,6 +262,51 @@ def make_thresholded_diff(arraylist, labels, lo=None, hi=None):
     
     return np.logical_or(exceeds_low, exceeds_hi)
 
+def select_clusters(arr, cluster_inds):
+    """
+    Given an array with entries corresponding to cluster labels
+    and an iterable of cluster indices, return a Boolean array 
+    corresponding to which entries in arr are labeled with any of
+    the indices in cluster_inds.
+    """
+    boolarr = np.empty( (len(cluster_inds),) + arr.shape)
+    for ind, cnum in enumerate(cluster_inds):
+        boolarr[ind] = arr == cnum
+    return np.any(boolarr, 0)
+
+def threshold_clusters(arraylist, labels, lo=None, hi=None, keeplo=None, keephi=None):
+    """
+    Given a list of arrays corresponding to single trials, a list of labels
+    corresponding to classes, lo and hi thresholds, and keeplo and keephi
+    significance thresholds for clusters, return an array
+    the size of arraylist[0] corresponding to True whenver the entry 
+    corresponds to a cluster larger than the significance threshold.
+    """
+    # get entries above hi threshold and below low threshold
+    pos = make_thresholded_diff(arraylist, labels, lo=None, hi=hi)
+    neg = make_thresholded_diff(arraylist, labels, lo=lo, hi=None)
+   
+    # label clusters 
+    posclus = label_clusters(pos)
+    negclus = label_clusters(neg)
+   
+    # get cluster sizes 
+    szhi = np.bincount(posclus.ravel())
+    szlo = -np.bincount(negclus.ravel())
+   
+    # which clusters numbers exceed size thresholds? 
+    hi_inds = np.flatnonzero(szhi >= keephi) 
+    lo_inds = np.flatnonzero(szlo <= keeplo)
+    
+    # get rid of cluster labeled 0, which is background
+    hi_inds = np.setdiff1d(hi_inds, np.array(0))
+    lo_inds = np.setdiff1d(lo_inds, np.array(0))
+    
+    # get Boolean mask for positive and negative clusters
+    hi_img = select_clusters(posclus, hi_inds)
+    lo_img = select_clusters(negclus, lo_inds)
+    
+    return np.logical_or(hi_img, lo_img)
 
 def evtsplit(df, ts, Tpre, Tpost, t0=0):
     """
