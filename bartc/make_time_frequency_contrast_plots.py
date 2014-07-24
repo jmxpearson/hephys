@@ -14,10 +14,10 @@ def make_time_frequency_plot(dtup, event_names, Tpre, Tpost, baseline_interval):
     times0 = evt[event_names[0]].dropna()
     times1 = evt[event_names[1]].dropna()
 
-    contr_tf, fig1 = lfp.contrast_time_frequency(17, [times0, times1], Tpre, Tpost, method='wav', normfun=norm_by_trial(baseline_interval), 
+    contr_tf, fig1 = lfp.contrast_time_frequency(dtup[2], [times0, times1], Tpre, Tpost, method='wav', normfun=norm_by_trial(baseline_interval), 
         doplot=True)
 
-    mcontr, fig2 = lfp.significant_time_frequency(17, [times0, times1], Tpre, 
+    mcontr, fig2 = lfp.significant_time_frequency(dtup[2], [times0, times1], Tpre, 
         Tpost, thresh=(2.5,), niter=1000, method='wav', doplot=True, 
         normfun=norm_by_trial(baseline_interval))
 
