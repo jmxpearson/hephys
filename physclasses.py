@@ -156,7 +156,7 @@ class LFPset(object):
         """
         Given a data series determined by channel, a two-element iterable, 
         times, containing times for a pair of events, pre and post-event 
-        windows to grab, a length 1 threshold tuple (for symmetric 
+        windows to grab, a scalar threshold (for symmetric 
         thresholding) or a pair of thresholds (lo, hi) at which to 
         cut clusters, a number of bootstrap iterations, and a p-value for
         statistical significance,
@@ -179,39 +179,39 @@ class LFPset(object):
         spectra, taxis, faxis = physutils.per_event_time_frequency(series,
             callback, alltimes['time'], Tpre, Tpost, **kwargs)
 
-        if len(thresh) == 1:
-            thlo = -thresh[0]
-            thhi = thresh[0]
-        else:
+        try: 
             thlo = thresh[0]
             thhi = thresh[1]
+        except:
+            thlo = -thresh
+            thhi = thresh
 
         # now loop
-        cluster_sizes = []
+        cluster_masses = []
         for ind in np.arange(niter):
             labels = np.random.permutation(alltimes['label'])
-            pos = physutils.make_thresholded_diff(spectra, labels, lo=None, hi=thhi)
-            neg = physutils.make_thresholded_diff(spectra, labels, lo=thlo, hi=None)
+            pos = physutils.make_thresholded_diff(spectra, labels, hi=thhi)
+            neg = physutils.make_thresholded_diff(spectra, labels, lo=thlo)
 
             posclus = physutils.label_clusters(pos)
             negclus = physutils.label_clusters(neg)
 
-            cluster_sizes = np.concatenate([
-                cluster_sizes,
-                physutils.get_cluster_sizes(posclus), 
-                -1 * physutils.get_cluster_sizes(negclus)
+            cluster_masses = np.concatenate([
+                cluster_masses,
+                physutils.get_cluster_masses(pos, posclus), 
+                physutils.get_cluster_masses(neg, negclus)
                 ])
 
         # extract cluster size thresholds based on null distribution
-        cluster_sizes = np.sort(cluster_sizes)
+        cluster_masses = np.sort(cluster_masses)
         plo = pval / 2.0
         phi = 1 - plo
-        Nlo = np.floor(len(cluster_sizes) * plo)
-        Nhi = np.ceil(len(cluster_sizes) * phi)
-        Clo = cluster_sizes[Nlo]
-        Chi = cluster_sizes[Nhi]
+        Nlo = np.floor(cluster_masses.size * plo)
+        Nhi = np.ceil(cluster_masses.size * phi)
+        Clo = cluster_masses[Nlo]
+        Chi = cluster_masses[Nhi]
 
-        # get boolean significant clusters for true labels
+        # get significance-masked array for statistic image
         truelabels = alltimes['label'].values
         signif = physutils.threshold_clusters(spectra, truelabels, lo=thlo,
             hi=thhi, keeplo=Clo, keephi=Chi)
@@ -221,8 +221,8 @@ class LFPset(object):
         img1 = physutils.mean_from_events(np.array(spectra)[truelabels == 1], taxis, faxis)
         contrast = img0 / img1
 
-        # make masked contrast
-        mcontrast = contrast.copy().mask(~signif)
+        # use mask from statistic map to mask original data
+        mcontrast = contrast.copy().mask(signif.mask)
 
         if doplot:
             color_lims = (np.amin(10 * np.log10(contrast.values)), np.amax(10 * np.log10(contrast.values)))
