@@ -18,7 +18,7 @@ def make_time_frequency_plot(dtup, event_names, Tpre, Tpost, baseline_interval):
         doplot=True)
 
     mcontr, fig2 = lfp.significant_time_frequency(dtup[2], [times0, times1], Tpre, 
-        Tpost, thresh=(2.5,), niter=1000, method='wav', doplot=True, 
+        Tpost, thresh=2.0, niter=1000, method='wav', doplot=True, 
         normfun=norm_by_trial(baseline_interval))
 
     return fig1, fig2
@@ -52,7 +52,3 @@ if __name__ == '__main__':
                 f.gca().set_ylim(0, 40)
                 pdf.savefig(f)
                 plt.close(f)
-            # plt.title(titlestr)
-            # plt.ylim((0, 40))
-            # pdf.savefig()
-            # plt.close()
