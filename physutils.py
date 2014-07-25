@@ -432,6 +432,14 @@ def label_clusters(img):
     clust_map = np.zeros(img.shape, dtype='int64')
     uf = UnionFind()
 
+    # extract mask from passed image
+    # if no masking, img.mask will only be a scalar False,
+    # in which case expand to array
+    if img.mask.size == 1:
+        im_mask = img.mask * np.ones_like(img)
+    else:
+        im_mask = img.mask
+
     # first loop: traverse image by pixels, constructing union-find
     # for connected components
     it = np.nditer(img, flags=['multi_index'])
@@ -439,7 +447,7 @@ def label_clusters(img):
         idx = it.multi_index
 
         # if present cell is not masked
-        if not img.mask[idx]:
+        if not im_mask[idx]:
             uf.add(idx)  # add to union-find
             if idx[0] > 0:
                 left = (idx[0] - 1, idx[1])
@@ -462,7 +470,7 @@ def label_clusters(img):
     while not it.finished:
         idx = it.multi_index
 
-        if not img.mask[idx]:
+        if not im_mask[idx]:
             clust_map[idx] = code_dict[uf.find(idx)[0]]
 
         it.iternext()
