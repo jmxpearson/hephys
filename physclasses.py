@@ -203,7 +203,6 @@ class LFPset(object):
                 ])
 
         # extract cluster size thresholds based on null distribution
-        cluster_masses = cluster_masses[np.nonzero(cluster_masses)]
         cluster_masses = np.sort(cluster_masses)
         plo = pval / 2.0
         phi = 1 - plo

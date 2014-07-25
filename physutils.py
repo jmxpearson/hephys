@@ -436,7 +436,7 @@ def label_clusters(img):
     # if no masking, img.mask will only be a scalar False,
     # in which case expand to array
     if img.mask.size == 1:
-        im_mask = img.mask * np.ones_like(img)
+        im_mask = img.mask * np.zeros_like(img)
     else:
         im_mask = img.mask
 
@@ -475,7 +475,13 @@ def label_clusters(img):
 
         it.iternext()
 
-    return clust_map
+    # get unique cluster labels and their mappings into the image
+    # note that since uniques are sorted, the value 0 in the image
+    # always maps to the zeroth position in uniques, so labeling of
+    # non-cluster background is preserved
+    uniques, indices = np.unique(clust_map, return_inverse=True)
+
+    return indices
 
 def get_cluster_masses(arr, indices):
     """
