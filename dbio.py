@@ -98,6 +98,10 @@ def get_censor(dbname, taxis, *args):
     excludes.index = taxis
     
     return excludes
+
+def censor_lfp(lfpset):
+    return get_censor(lfpset.meta['dbname'], lfpset.dataframe.index, 
+        *lfpset.meta['tuple'])
    
 def censor_spikes(df, dbname, dtup):
     excludes = get_censor(dbname, df.index, *dtup)
@@ -132,7 +136,7 @@ def fetch_LFP(dbname, *tup):
     sr = 1. / dt
     meta = {'dbname': dbname, 'tuple': tup, 'sr': sr}
 
-    return physutils.lfp.LFPset(lfp, meta)    
+    return physutils.lfpclasses.LFPset(lfp, meta)    
 
 def fetch_all_such_LFP(dbname, *tup, **kwargs):
     """ 
@@ -148,4 +152,4 @@ def fetch_all_such_LFP(dbname, *tup, **kwargs):
     sr = 1. / dt
     meta = {'dbname': dbname, 'tuple': tup, 'sr': sr}
 
-    return physutils.lfp.LFPset(lfp, meta)
+    return physutils.lfpclasses.LFPset(lfp, meta)
