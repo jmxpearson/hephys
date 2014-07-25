@@ -481,7 +481,7 @@ def label_clusters(img):
     # non-cluster background is preserved
     uniques, indices = np.unique(clust_map, return_inverse=True)
 
-    return indices
+    return np.reshape(indices, img.shape)
 
 def get_cluster_masses(arr, indices):
     """
