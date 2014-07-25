@@ -314,7 +314,7 @@ def select_clusters(arr, cluster_inds):
         boolarr[ind] = arr == cnum
     return np.any(boolarr, 0)
 
-def threshold_clusters(arraylist, labels, lo=None, hi=None, keeplo=None, keephi=None, diff_fun=diff_t_stat):
+def threshold_clusters(arraylist, labels, lo=-np.inf, hi=np.inf, keeplo=None, keephi=None, diff_fun=diff_t_stat):
     """
     Given a list of arrays corresponding to single trials, a list of labels
     corresponding to classes, lo and hi thresholds, and keeplo and keephi
@@ -323,8 +323,8 @@ def threshold_clusters(arraylist, labels, lo=None, hi=None, keeplo=None, keephi=
     corresponds to a cluster larger than the significance threshold.
     """
     # get entries above hi threshold and below low threshold
-    pos = make_thresholded_diff(arraylist, labels, lo=None, hi=hi, diff_fun=diff_fun)
-    neg = make_thresholded_diff(arraylist, labels, lo=lo, hi=None, diff_fun=diff_fun)
+    pos = make_thresholded_diff(arraylist, labels, hi=hi, diff_fun=diff_fun)
+    neg = make_thresholded_diff(arraylist, labels, lo=lo, diff_fun=diff_fun)
 
     # label clusters 
     posclus = label_clusters(pos)
