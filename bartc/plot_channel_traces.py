@@ -2,12 +2,13 @@
 Given a tuple of subject, dataset, line plot peri-event power in each
 LFP channel
 """
-from physutils import *
-from physclasses import *
 import rpy2.robjects as robjects
 import pandas.rpy.common as com
-
+import pandas as pd
+import physutils
+import dbio
 import os
+
 os.chdir(os.path.expanduser('~/code/hephys/bartc'))
 ################ all channel traces ##########################
 dtup = 20, 1 
@@ -17,7 +18,7 @@ dbname = os.path.expanduser('~/data/bartc/plexdata/bartc.hdf5')
 
 # get lfp data
 print "Fetching Data..."
-lfp = fetch_all_such_LFP(dbname, *dtup)
+lfp = dbio.fetch_all_such_LFP(dbname, *dtup)
     
 # bandpass filter
 print "Filtering..."
@@ -36,7 +37,7 @@ print "Censoring..."
 lfp = lfp.censor()
 
 # get events
-evt = fetch(dbname, 'events', *dtup)
+evt = dbio.fetch(dbname, 'events', *dtup)
 t_evt = evt[['stop inflating', 'banked']].dropna()
 stops = t_evt['stop inflating']
 pops = evt['popped'].dropna()
@@ -50,8 +51,8 @@ stop_split = lfp.evtsplit(stops, Tpre, Tpost)
 pop_split = lfp.evtsplit(pops, Tpre, Tpost)
 
 # group by time and get mean for each channel for each time
-stop_means = LFPset(stop_split.groupby(level=1).median(), meta=lfp.meta.copy()).zscore() 
-pop_means = LFPset(pop_split.groupby(level=1).median(), meta=lfp.meta.copy()).zscore() 
+stop_means = physutils.LFPset(stop_split.groupby(level=1).median(), meta=lfp.meta.copy()).zscore() 
+pop_means = physutils.LFPset(pop_split.groupby(level=1).median(), meta=lfp.meta.copy()).zscore() 
 
 print "Smoothing..."
 stop_means= stop_means.smooth(0.2)

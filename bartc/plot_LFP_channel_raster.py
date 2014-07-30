@@ -2,10 +2,12 @@
 Contains plotting functions, some of which read data from the 
 database and call R for plotting.
 """
-from physutils import *
-from physclasses import *
 import rpy2.robjects as robjects
 import pandas.rpy.common as com
+import numpy as np
+import pandas as pd
+import physutils
+import dbio
 
 import os
 os.chdir('/home/jmp33/code/hephys/bartc')
@@ -17,7 +19,7 @@ dtup = 18, 1, 22
 dbname = '/home/jmp33/data/bartc/plexdata/bartc.hdf5'
 
 # get lfp data
-lfpset = fetch_LFP(dbname, *dtup)
+lfpset = dbio.fetch_LFP(dbname, *dtup)
 
 # bandpass filter
 lfpset = lfpset.bandlimit(['theta'])
@@ -38,7 +40,7 @@ lfpset = lfpset.smooth(0.075)
 lfpset = lfpset.apply(lambda x: 10 * np.log10(x))
 
 # get events
-evt = fetch(dbname, 'events', *dtup[:-1])
+evt = dbio.fetch(dbname, 'events', *dtup[:-1])
 t_evt = evt[['start inflating', 'banked', 'popped']]
 
 # calculate duration of inflation
@@ -55,7 +57,7 @@ Tpre = -1
 Tpost = np.ceil(max_inf) + 1
 
 # grab data
-chunks = evtsplit(lfpset, t_evt['start inflating'], Tpre, Tpost)
+chunks = physutils.evtsplit(lfpset, t_evt['start inflating'], Tpre, Tpost)
 
 # sort trials by inflate time
 evt_sorted = t_evt.sort(columns=['didpop', 'inf_dur'])
@@ -85,4 +87,3 @@ pp = R['rasterize'](rdf, inft)
 R.plot(pp)
 
 R('dev.off()')
-

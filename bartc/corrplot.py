@@ -1,14 +1,14 @@
 """
 gist to plot cross-channel LFP correlations as a function of time 
 """
-from physutils import *
-from physclasses import * 
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.spatial.distance import pdist, squareform
 import scipy.cluster.hierarchy as clust
 from sklearn import manifold
 import os
+import physutils
+import dbio
 
 # pick a dataset
 dtup = 23, 1 
@@ -18,7 +18,7 @@ dbname = '/home/jmp33/data/bartc/plexdata/bartc.hdf5'
 
 # get lfp data, normalize, downsample
 print 'Fetching data...'
-df = fetch_all_such_LFP(dbname, *dtup)
+df = dbio.fetch_all_such_LFP(dbname, *dtup)
 df = df.zscore()
 df = df.decimate(5)
     
@@ -62,6 +62,7 @@ outdir = '/home/jmp33/data/bartc/movies'
 
 offset = 0
 counter = 0
+oldpos = None
 while (offset + Nchunk < len(df.index)):
     if counter % 100 == 0:
         print 'counter = ' + str(counter)

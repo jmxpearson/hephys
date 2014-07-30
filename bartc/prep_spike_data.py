@@ -5,7 +5,7 @@ generalized linear model.
 import numpy as np
 import os
 import pandas as pd
-from physutils import *
+import dbio
 
 def set_intervals_to_true(df, starts, stops):
     pairs = zip(starts, stops)
@@ -99,9 +99,9 @@ if __name__ == '__main__':
         dtup = tuple(row)
         print dtup    
 
-        spks = load_spikes(dbname, dtup)
+        spks = dbio.load_spikes(dbname, dtup)
 
-        evt = fetch(dbname, 'events', *dtup[0:2])
+        evt = dbio.fetch(dbname, 'events', *dtup[0:2])
 
         regressors = make_regressor_frame(spks, evt)
 

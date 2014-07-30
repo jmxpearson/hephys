@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 import os
-from physutils import *
-from physclasses import *
+import physutils
+import dbio
 
 def get_eigens(X):
     # assume X is a vector
@@ -18,7 +18,7 @@ def get_eigens(X):
 
 def get_eigen_series(df):
     newdf = df.apply(get_eigens, axis=1)
-    return LFPset(newdf, df.meta.copy())
+    return physutils.LFPset(newdf, df.meta.copy())
 
 def make_PCA_series(lfp, window, skip):
     # window is the length of the window to slide (in bins)
@@ -26,7 +26,7 @@ def make_PCA_series(lfp, window, skip):
     corrseries = pd.rolling_corr(lfp.dataframe, window=window)
     corrseries = corrseries.iloc[::skip, :, :]
     corrseries = corrseries.to_frame(filter_observations=False).transpose()
-    lfp_pairs = LFPset(corrseries, meta=lfp.meta.copy())
+    lfp_pairs = physutils.LFPset(corrseries, meta=lfp.meta.copy())
     eigs = get_eigen_series(lfp_pairs)
     return eigs
 
@@ -51,10 +51,10 @@ def corr_then_med(lfp, events, Tpre, Tpost):
     eigseries = PCA_series(lfpd, win=0.25, frac_overlap=0.95).censor()
 
     # norm to max eigenvalue
-    total_var_normed = LFPset(eigseries.div(eigseries.dataframe.iloc[:, -1], axis=0), meta=eigseries.meta.copy())
+    total_var_normed = physutils.LFPset(eigseries.div(eigseries.dataframe.iloc[:, -1], axis=0), meta=eigseries.meta.copy())
 
     # normalize to max eigenvalue
-    max_eigen_normed = LFPset(eigseries.div(eigseries.sum(axis=1), axis=0), meta=eigseries.meta.copy())
+    max_eigen_normed = physutils.LFPset(eigseries.div(eigseries.sum(axis=1), axis=0), meta=eigseries.meta.copy())
 
     # break up data around events
     frames = (eigseries, total_var_normed, max_eigen_normed)
@@ -76,17 +76,17 @@ def med_then_corr(lfp, events, Tpre, Tpost):
     print "Splitting Data..."
     split_lfp = lfpd.evtsplit(events, Tpre, Tpost)
 
-    chanmeds = LFPset(split_lfp.groupby(level=1).median(), 
+    chanmeds = physutils.LFPset(split_lfp.groupby(level=1).median(), 
         meta=lfpd.meta.copy())
 
     print "Extracting eigenvalues..."
     eigseries = PCA_series(chanmeds, win=0.25, frac_overlap=0.95)
     
     # normlize as percent total variance
-    total_var_normed = LFPset(eigseries.div(eigseries.sum(axis=1), axis=0), meta=eigseries.meta.copy())
+    total_var_normed = physutils.LFPset(eigseries.div(eigseries.sum(axis=1), axis=0), meta=eigseries.meta.copy())
 
     # normalize to max eigenvalue
-    max_eigen_normed = LFPset(eigseries.div(eigseries.dataframe.iloc[:, -1], axis=0), meta=eigseries.meta.copy())
+    max_eigen_normed = physutils.LFPset(eigseries.div(eigseries.dataframe.iloc[:, -1], axis=0), meta=eigseries.meta.copy())
 
     return (eigseries, total_var_normed, max_eigen_normed)
 
@@ -107,10 +107,10 @@ name = (18, 1)
 print name
 
 print "Fetching LFP data..."
-lfp = fetch_all_such_LFP(dbname, *name)
+lfp = dbio.fetch_all_such_LFP(dbname, *name)
 
 # fetch events
-evt = fetch(dbname, 'events', *name)
+evt = dbio.fetch(dbname, 'events', *name)
 stops = evt[['stop inflating']].dropna().values
 
 # prepare to do some plotting

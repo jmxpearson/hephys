@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
-from physutils import *
-from physclasses import *
+import physutils
+import dbio
 import warnings
 
 def within_range(test_value, anchor_list, radius_tuple):
@@ -44,7 +44,7 @@ for name, grp in groups:
 
         # read in data
         print 'Reading LFP...'
-        lfp = fetch_LFP(dbname, *dtup)
+        lfp = dbio.fetch_LFP(dbname, *dtup)
 
         # de-mean
         print 'Removing mean...'
@@ -78,7 +78,7 @@ for name, grp in groups:
     # concatenate data from all channels
     print 'Merging channels...'
     groupdata = pd.concat(allchans, axis=1)
-    groupdata = LFPset(groupdata, banded.meta)
+    groupdata = physutils.LFPset(groupdata, banded.meta)
 
     # specify peri-event times
     dt = 1. / np.array(banded.meta['sr']).round(3)  # dt in ms
@@ -87,7 +87,7 @@ for name, grp in groups:
 
     # grab events (successful stops = true positives for training)
     print 'Fetching events (true positives)...'
-    evt = fetch(dbname, 'events', *dtup[:2])['banked'].dropna()
+    evt = dbio.fetch(dbname, 'events', *dtup[:2])['banked'].dropna()
     evt = np.around(evt / dt) * dt  # round to nearest dt
     # extend with nearby times
     truepos = (pd.DataFrame(pd.concat([evt, evt - 0.5, evt - 1.0]).values, 
