@@ -8,10 +8,6 @@ These files perform analysis on electrophysiology data taken while subjects perf
 
 * `build_db.py` defines a `DataSets` class that constructs the hdf5 database from Matlab and Plexon source files. Individual files for each task (in subdirectories) use this file in constructing databases.
 
-* `physutils.py` is a module containing utility functions related to data fetching and processing. Includes code for selecting all data relevant to a dataset tuple, bandlimiting, smoothing, splitting data around events, and binning spikes.
-
-* `physclasses.py` provides an LFP class wrapper for a Pandas dataframe. Includes useful functions from `physutils.py` as methods.
-
 #### bartc
 
 * `build_bart_db.py` uses the `DataSets` class from `build_db.py` to construct the BART database.
@@ -36,7 +32,7 @@ These files perform analysis on electrophysiology data taken while subjects perf
 
 ### Dependencies:
 
-* Python: NumPy, SciPy, Pandas, h5py (for reading Matlab files), pytables (via Pandas), warnings, rpy2 (for calling R).
+* Python: NumPy, SciPy, Pandas, h5py (for reading Matlab files), pytables (via Pandas), warnings, rpy2 (for calling R). In addition, makes extensive use of the [physutils](https://github.com/jmxpearson/physutils) repository.
 
 * R: glmnet, ggplot2, reshape.
 
