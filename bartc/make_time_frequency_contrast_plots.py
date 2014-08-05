@@ -16,12 +16,12 @@ def make_time_frequency_plot(dtup, event_names, Tpre, Tpost, baseline_interval):
     times0 = evt[event_names[0]].dropna()
     times1 = evt[event_names[1]].dropna()
 
-    contr_tf, fig1 = lfp.contrast_time_frequency(dtup[2], [times0, times1], Tpre, Tpost, method='wav', normfun=physutils.norm_by_trial(baseline_interval), 
-        doplot=True)
+    nf = physutils.norm_by_trial(baseline_interval, method='subtraction')
+
+    contr_tf, fig1 = lfp.contrast_time_frequency(dtup[2], [times0, times1], Tpre, Tpost, method='wav', normfun=nf, doplot=True)
 
     mcontr, fig2 = lfp.significant_time_frequency(dtup[2], [times0, times1], Tpre, 
-        Tpost, thresh=2.0, niter=1000, method='wav', doplot=True, 
-        normfun=physutils.norm_by_trial(baseline_interval))
+        Tpost, thresh=2.0, niter=1000, method='wav', doplot=True, normfun=nf)
 
     return fig1, fig2
 
