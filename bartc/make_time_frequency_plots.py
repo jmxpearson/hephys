@@ -5,7 +5,7 @@ import physutils
 import hephys.dbio as dbio
 import os
 
-def make_time_frequency_plot(dtup, event_name, Tpre, Tpost, baseline_interval):
+def make_time_frequency_plot(dbname, dtup, event_name, Tpre, Tpost, baseline_interval):
 
     # get lfp data
     print "Fetching data: " + str(dtup)
@@ -39,7 +39,7 @@ if __name__ == '__main__':
 
         for idx, channel_inds in setlist.iterrows():
             dtup = tuple(channel_inds)
-            make_time_frequency_plot(dtup, event_name, Tpre, Tpost, baseline_interval)
+            make_time_frequency_plot(dbname, dtup, event_name, Tpre, Tpost, baseline_interval)
             titlestr = "Channel: " + str(dtup) + "\nAlign: " + event_name
             plt.title(titlestr)
             pdf.savefig()
