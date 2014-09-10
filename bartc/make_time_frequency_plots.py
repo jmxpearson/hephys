@@ -28,8 +28,8 @@ if __name__ == '__main__':
     setlist = pd.read_hdf(dbname, '/meta/lfplist')
 
     # get ready to write to file
-    fname = 'pop_time_freqs.pdf'
-    event_name = 'popped'
+    fname = 'stop_time_freqs.pdf'
+    event_name = 'stop inflating'
     Tpre = -1.5
     Tpost = 0.5
     baseline_interval = (-1.5, -1.35)
