@@ -22,5 +22,7 @@ df <- extract_coeffs(fitobjs[[ind]])
 band_stats <- ddply(df, ~band, summarize, mean = mean(value), 
     mean_abs = mean(abs(value)), std = sd(value), std_abs = sd(abs(value)))
 
+pdf(file='~/Dropbox/hephys/media/figs/lfp_coeff_grid.pdf', paper='USr', width=11, height=8.5)
 plt <- plot_lfp_coefficient_grid(df)
 print(plt)
+dev.off()
