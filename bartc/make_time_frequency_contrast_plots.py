@@ -17,7 +17,7 @@ def make_time_frequency_plot(dtup, event_names, Tpre, Tpost, freqs, baseline_int
     times0 = evt[event_names[0]].dropna()
     times1 = evt[event_names[1]].dropna()
 
-    nf = physutils.norm_by_mean(baseline_interval, method='subtraction')
+    nf = physutils.norm_by_mean(baseline_interval)
 
     contr_tf, fig1 = lfp.contrast_time_frequency(dtup[2], [times0, times1], Tpre, Tpost, method='wav', normfun=nf, doplot=True, freqs=freqs)
 
@@ -40,7 +40,7 @@ if __name__ == '__main__':
     Tpost = 0.5
     baseline_interval = (-1.5, -1.35)
     freqs = np.exp(np.linspace(np.log(2.5), np.log(50)))
-    thresh = 1.
+    thresh = 1.5
 
     # open pdf for plotting
     with PdfPages(os.path.expanduser('~/Dropbox/hephys/media/figs/' + fname)) as pdf:
