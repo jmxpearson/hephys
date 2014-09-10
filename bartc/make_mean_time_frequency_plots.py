@@ -26,7 +26,7 @@ def make_time_frequency_plot(dtup, event_name, Tpre, Tpost, baseline_interval):
         if dtup + (channel,) in bad_channel_list: 
             continue
         print "Channel " + str(channel)
-        wav_normed, im = lfp.avg_time_frequency(channel, times, Tpre, Tpost, method='wav', doplot=False, normfun=physutils.norm_by_trial(baseline_interval))
+        wav_normed, im = lfp.avg_time_frequency(channel, times, Tpre, Tpost, method='wav', doplot=False, normfun=physutils.norm_by_mean(baseline_interval))
         all_wavs.append(wav_normed)
 
     # take mean power across all channels

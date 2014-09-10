@@ -15,7 +15,7 @@ def make_time_frequency_plot(dbname, dtup, event_name, Tpre, Tpost, baseline_int
     evt = dbio.fetch(dbname, 'events', *dtup[:2])
     times = evt[event_name].dropna()
 
-    wav_normed, fig = lfp.avg_time_frequency(dtup[2], times, Tpre, Tpost, method='wav', normfun=physutils.norm_by_trial(baseline_interval))
+    wav_normed, fig = lfp.avg_time_frequency(dtup[2], times, Tpre, Tpost, method='wav', normfun=physutils.norm_by_mean(baseline_interval))
 
     return fig
 
