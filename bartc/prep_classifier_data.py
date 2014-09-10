@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import physutils
-import dbio
+import hephys.dbio as dbio
 import warnings
 
 def within_range(test_value, anchor_list, radius_tuple):
@@ -98,7 +98,7 @@ for name, grp in groups:
     print 'Generating true negatives...'
     maxT = np.max(groupdata.index.values)
     # make some candidate random times
-    Nrand = 3000
+    Nrand = truepos.shape[0] #3000
     candidates = np.random.rand(Nrand) * (maxT - Tpre) + Tpre
     candidates = np.around(candidates / dt) * dt  # round to nearest dt
     candidates = np.unique(candidates)

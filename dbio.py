@@ -136,7 +136,7 @@ def fetch_LFP(dbname, *tup):
     sr = 1. / dt
     meta = {'dbname': dbname, 'tuple': tup, 'sr': sr}
 
-    return physutils.lfpclasses.LFPset(lfp, meta)    
+    return physutils.LFPset(lfp, meta)    
 
 def fetch_all_such_LFP(dbname, *tup, **kwargs):
     """ 
