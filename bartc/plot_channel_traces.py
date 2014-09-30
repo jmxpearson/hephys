@@ -6,7 +6,7 @@ import rpy2.robjects as robjects
 import pandas.rpy.common as com
 import pandas as pd
 import physutils
-import dbio
+from hephys import dbio
 import os
 
 os.chdir(os.path.expanduser('~/code/hephys/bartc'))
