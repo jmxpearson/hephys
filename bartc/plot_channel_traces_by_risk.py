@@ -75,21 +75,19 @@ def get_traces(dtup, event, bands):
     return df
 
 
-def make_filename(df, name):
+def make_filename(df, name, bands):
     base = '~/Dropbox/hephys/media/figs/' 
-    colnames = df.columns
-    bands = set(map(lambda x: x.split('.')[0], colnames))
     pieces = list(df.meta['tuple']) + ['_'.join(bands), name, 'chanplot', 'pdf']
     return "\'" + base + '.'.join(map(str, pieces)) + "\'"
 
-def print_from_R(df, name):
+def print_from_R(df, name, bands):
     # prepare dataframe for passing to R
     rdat = df.copy()
     rdat = rdat.reset_index()
     rdat = pd.melt(rdat, id_vars='time')
     rdf = com.convert_to_r_dataframe(rdat)
 
-    fname = make_filename(df, name)
+    fname = make_filename(df, name, bands)
 
     # load up R
     R = robjects.r
@@ -110,5 +108,5 @@ if __name__ == '__main__':
     for (dtup, event, bands) in itertools.product(tuplist, evtnames, bandlist):
         print dtup, event, bands
         df = get_traces(dtup, event, bands)
-        print_from_R(df, event)
+        print_from_R(df, event, bands)
 
