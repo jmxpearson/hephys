@@ -108,6 +108,7 @@ if __name__ == '__main__':
     bandlist = [['theta'], ['beta']]
     tuplist = [(17, 2), (18, 1), (20, 1), (22,1), (23, 1), (30, 1)]
     for (dtup, event, bands) in itertools.product(tuplist, evtnames, bandlist):
+        print dtup, event, bands
         df = get_traces(dtup, event, bands)
         print_from_R(df, event)
 
