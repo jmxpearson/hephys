@@ -109,6 +109,32 @@ extract_coeffs <- function(fitobj) {
   return(df)
 }
 
+sign_neutral_dist <- function(M) {
+    # compute a distance function between rows of M, allowing 
+    # for an overall sign flip to one of them
+    # this preserves the correlation within rows, but says that sign
+    # changes between rows are immaterial
+    M <- as.matrix(M)
+    n <- nrow(M)
+
+    dminus <- matrix(NA, n, n)
+    for (i in 1:n) {
+        for (j in 1:(i - 1)) {
+            dminus[i, j] <- sum((M[i,] - M[j,])^2)
+        }
+    }
+
+    dplus <- matrix(NA, n, n)
+    for (i in 1:n) {
+        for (j in 1:(i - 1)) {
+            dplus[i, j] <- sum((M[i,] + M[j,])^2)
+        }
+    }
+
+    dfinal = pmin(dplus, dminus)
+    return(as.dist(dfinal))
+}
+
 plot_lfp_coefficient_grid <- function(df) {
   # plot a heatmap grid of coefficients for lfp regression
   plt <- ggplot(df, aes(x=band, y=channel))

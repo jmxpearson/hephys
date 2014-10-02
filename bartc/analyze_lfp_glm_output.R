@@ -18,6 +18,11 @@ dev.off()
 ######## code to plot heatmap of regression coefficients ##########
 df <- extract_coeffs(fitobjs[[ind]])
 
+# now reorder channels based on hierarchical clustering
+coef_grid <- cast(df, channel ~ band)
+dend <- hclust(sign_neutral_dist(coef_grid[, -1]))
+df$channel <- factor(df$channel, levels=levels(df$channel)[dend$order])
+
 # useful summary stats
 band_stats <- ddply(df, ~band, summarize, mean = mean(value), 
     mean_abs = mean(abs(value)), std = sd(value), std_abs = sd(abs(value)))
