@@ -1,5 +1,6 @@
-
-# # Plot average peri-event power for all risk conditions
+"""
+Plot average peri-event power for all risk conditions
+"""
 
 from __future__ import division
 import rpy2.robjects as robjects
@@ -41,7 +42,7 @@ def get_traces(dtup, event, bands):
     # get events
     evt = dbio.fetch(dbname, 'events', *dtup)
 
-    # restric to non-control trials
+    # restrict to non-control trials
     evt = evt[evt.trial_type.isin([1, 2, 3])]
 
     # get only those trials where outcome is not NA

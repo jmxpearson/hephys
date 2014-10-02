@@ -2,61 +2,73 @@
 Given a tuple of subject, dataset, line plot peri-event power in each
 LFP channel
 """
+from __future__ import division
 import rpy2.robjects as robjects
 import pandas.rpy.common as com
 import pandas as pd
 import physutils
 from hephys import dbio
 import os
+import itertools
 
-os.chdir(os.path.expanduser('~/code/hephys/bartc'))
-################ all channel traces ##########################
-dtup = 20, 1 
+# set up relevant params
+Tpre = -2  # time before event to grab
+Tpost = 0.5  # time after event to grab
+smwid = 0.2  # smoothing window (in s)
 
-# open data file
-dbname = os.path.expanduser('~/data/bartc/plexdata/bartc.hdf5')
+def get_traces(dtup, event, bands):
 
-# get lfp data
-print "Fetching Data..."
-lfp = dbio.fetch_all_such_LFP(dbname, *dtup)
-    
-# bandpass filter
-print "Filtering..."
-lfp = lfp.bandlimit(['theta'])
+    # load data
+    os.chdir(os.path.expanduser('~/code/hephys/bartc'))
+    dbname = os.path.expanduser('~/data/bartc/plexdata/bartc.hdf5')
 
-# decimate to 100 Hz effective sampling
-print "Decimating..."
-lfp = lfp.decimate(5)
+    # get lfp data
+    print "Fetching Data..."
+    lfp = dbio.fetch_all_such_LFP(dbname, *dtup)
+        
+    # bandpass filter
+    print "Filtering..."
+    lfp = lfp.bandlimit(['theta'])
 
-# instantaneous power
-print "Calculating Power..."
-lfp = lfp.instpwr()
+    # decimate to 100 Hz effective sampling
+    print "Decimating..."
+    lfp = lfp.decimate(5)
 
-# remove censored regions
-print "Censoring..."
-lfp = lfp.censor()
+    # instantaneous power
+    print "Calculating Power..."
+    lfp = lfp.instpwr()
 
-# get events
-evt = dbio.fetch(dbname, 'events', *dtup)
-t_evt = evt[['stop inflating', 'banked']].dropna()
-stops = t_evt['stop inflating']
-pops = evt['popped'].dropna()
+    # remove censored regions
+    print "Censoring..."
+    lfp = lfp.censor()
 
-# define pre and post time intervals
-Tpre = -2
-Tpost = 0
+    # get events
+    evt = dbio.fetch(dbname, 'events', *dtup)
+    evtseries = evt[event].dropna()
 
-# split lfp around stops
-stop_split = lfp.evtsplit(stops, Tpre, Tpost)
-pop_split = lfp.evtsplit(pops, Tpre, Tpost)
+    # split lfp around stops
+    lfp_split = lfp.evtsplit(evtseries, Tpre, Tpost)
 
-# group by time and get mean for each channel for each time
-stop_means = physutils.LFPset(stop_split.groupby(level=1).median(), meta=lfp.meta.copy()).zscore() 
-pop_means = physutils.LFPset(pop_split.groupby(level=1).median(), meta=lfp.meta.copy()).zscore() 
+    # group by time and get median for each channel for each time
+    medians = lfp_split.groupby(level=1).median()
 
-print "Smoothing..."
-stop_means= stop_means.smooth(0.2)
-pop_means= pop_means.smooth(0.2)
+    # make peri-stop frame
+    df = physutils.LFPset(medians, meta=lfp.meta.copy()).zscore()
+    df = df.smooth(smwid)
+
+    return df
+
+# # split lfp around stops
+# stop_split = lfp.evtsplit(stops, Tpre, Tpost)
+# pop_split = lfp.evtsplit(pops, Tpre, Tpost)
+
+# # group by time and get mean for each channel for each time
+# stop_means = physutils.LFPset(stop_split.groupby(level=1).median(), meta=lfp.meta.copy()).zscore() 
+# pop_means = physutils.LFPset(pop_split.groupby(level=1).median(), meta=lfp.meta.copy()).zscore() 
+
+# print "Smoothing..."
+# stop_means= stop_means.smooth(0.2)
+# pop_means= pop_means.smooth(0.2)
 
 print "Sending to R..."
 def make_filename(df, name):
@@ -88,7 +100,16 @@ def print_from_R(df, name):
 
     R('dev.off()')
 
-frames = [stop_means, pop_means]
-names = ['stop', 'pop']
-for (frame, name) in zip(frames, names):
-    print_from_R(frame, name)
+# frames = [stop_means, pop_means]
+# names = ['stop', 'pop']
+# for (frame, name) in zip(frames, names):
+#     print_from_R(frame, name)
+
+if __name__ == '__main__':
+    evtnames = ['banked', 'popped']
+    bandlist = [['theta'], ['alpha'], ['beta']]
+    tuplist = [(17, 2), (18, 1), (20, 1), (22,1), (23, 1), (30, 1)]
+    for (dtup, event, bands) in itertools.product(tuplist, evtnames, bandlist):
+        print dtup, event, bands
+        df = get_traces(dtup, event, bands)
+        print_from_R(df, event)
