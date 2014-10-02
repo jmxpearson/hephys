@@ -58,27 +58,13 @@ def get_traces(dtup, event, bands):
 
     return df
 
-# # split lfp around stops
-# stop_split = lfp.evtsplit(stops, Tpre, Tpost)
-# pop_split = lfp.evtsplit(pops, Tpre, Tpost)
-
-# # group by time and get mean for each channel for each time
-# stop_means = physutils.LFPset(stop_split.groupby(level=1).median(), meta=lfp.meta.copy()).zscore() 
-# pop_means = physutils.LFPset(pop_split.groupby(level=1).median(), meta=lfp.meta.copy()).zscore() 
-
-# print "Smoothing..."
-# stop_means= stop_means.smooth(0.2)
-# pop_means= pop_means.smooth(0.2)
-
-print "Sending to R..."
-def make_filename(df, name):
+def make_filename(df, name, bands):
     base = '~/Dropbox/hephys/media/figs/' 
     colnames = df.columns
-    bands = set(map(lambda x: x.split('.')[0], colnames))
     pieces = list(df.meta['tuple']) + ['_'.join(bands), name, 'chanplot', 'pdf']
     return "\'" + base + '.'.join(map(str, pieces)) + "\'"
 
-def print_from_R(df, name):
+def print_from_R(df, name, bands):
     # prepare dataframe for passing to R
     rdat = df.copy()
     rdat.columns = range(rdat.shape[1])
@@ -86,7 +72,7 @@ def print_from_R(df, name):
     rdat = pd.melt(rdat, id_vars='time')
     rdf = com.convert_to_r_dataframe(rdat)
 
-    fname = make_filename(df, name)
+    fname = make_filename(df, name, bands)
 
     # load up R
     R = robjects.r
@@ -100,11 +86,6 @@ def print_from_R(df, name):
 
     R('dev.off()')
 
-# frames = [stop_means, pop_means]
-# names = ['stop', 'pop']
-# for (frame, name) in zip(frames, names):
-#     print_from_R(frame, name)
-
 if __name__ == '__main__':
     evtnames = ['banked', 'popped']
     bandlist = [['theta'], ['alpha'], ['beta']]
@@ -112,4 +93,4 @@ if __name__ == '__main__':
     for (dtup, event, bands) in itertools.product(tuplist, evtnames, bandlist):
         print dtup, event, bands
         df = get_traces(dtup, event, bands)
-        print_from_R(df, event)
+        print_from_R(df, event, bands)
