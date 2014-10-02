@@ -28,7 +28,7 @@ def get_traces(dtup, event, bands):
         
     # bandpass filter
     print "Filtering..."
-    lfp = lfp.bandlimit(['theta'])
+    lfp = lfp.bandlimit(bands)
 
     # decimate to 100 Hz effective sampling
     print "Decimating..."
