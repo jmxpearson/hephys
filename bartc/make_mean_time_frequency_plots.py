@@ -1,3 +1,7 @@
+"""
+For all datasets, calculate the peri-event time-frequency plot, averaged
+across all channels.
+"""
 import matplotlib
 matplotlib.use('Agg')
 from matplotlib.backends.backend_pdf import PdfPages
@@ -12,7 +16,7 @@ def make_time_frequency_plot(dtup, event_name, Tpre, Tpost, freqs, baseline_inte
 
     # get lfp data
     print "Fetching data: " + str(dtup)
-    lfp = dbio.fetch_all_such_LFP(dbname, *dtup).censor()
+    lfp = dbio.fetch_all_such_LFP(dbname, *dtup).censor().zscore()
 
     # get events
     evt = dbio.fetch(dbname, 'events', *dtup[:2])
@@ -27,13 +31,16 @@ def make_time_frequency_plot(dtup, event_name, Tpre, Tpost, freqs, baseline_inte
         if dtup + (channel,) in bad_channel_list: 
             continue
         print "Channel " + str(channel)
-        wav_normed, im = lfp.avg_time_frequency(channel, times, Tpre, Tpost, method='wav', doplot=False, normfun=physutils.norm_by_mean(baseline_interval))
+        wav_normed, im = lfp.avg_time_frequency(channel, times, Tpre, Tpost, method='wav', doplot=False, normfun=None)
         all_wavs.append(wav_normed)
 
     # take mean power across all channels
     all_wav_mean = reduce(lambda x, y: x.add(y, fill_value=0), all_wavs) / len(all_wavs)
 
-    fig = physutils.plot_time_frequency(all_wav_mean)
+    # normalize across frequencies
+    normfun = lambda x: x / x[slice(*baseline_interval)].mean()
+
+    fig = physutils.plot_time_frequency(normfun(all_wav_mean))
 
     return fig
 
