@@ -60,7 +60,6 @@ def get_traces(dtup, event, bands):
 
 def make_filename(df, name, bands):
     base = '~/Dropbox/hephys/media/figs/' 
-    colnames = df.columns
     pieces = list(df.meta['tuple']) + ['_'.join(bands), name, 'chanplot', 'pdf']
     return "\'" + base + '.'.join(map(str, pieces)) + "\'"
 
