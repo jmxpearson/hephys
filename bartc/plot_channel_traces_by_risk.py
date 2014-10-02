@@ -1,7 +1,5 @@
 
-# coding: utf-8
-
-# # Plot average peri-event per-channel power
+# # Plot average peri-event power for all risk conditions
 
 from __future__ import division
 import rpy2.robjects as robjects
@@ -103,7 +101,7 @@ def print_from_R(df, name, bands):
 
 if __name__ == '__main__':
     evtnames = ['banked', 'popped']
-    bandlist = [['theta'], ['beta']]
+    bandlist = [['theta'], ['alpha'], ['beta']]
     tuplist = [(17, 2), (18, 1), (20, 1), (22,1), (23, 1), (30, 1)]
     for (dtup, event, bands) in itertools.product(tuplist, evtnames, bandlist):
         print dtup, event, bands
