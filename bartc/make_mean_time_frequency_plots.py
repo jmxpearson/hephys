@@ -40,7 +40,7 @@ def make_time_frequency_plot(dtup, event_name, Tpre, Tpost, freqs, baseline_inte
     # normalize across frequencies
     normfun = lambda x: x / x[slice(*baseline_interval)].mean()
 
-    fig = physutils.plot_time_frequency(normfun(all_wav_mean))
+    fig = physutils.tf.plot_time_frequency(normfun(all_wav_mean))
 
     return fig
 
