@@ -53,7 +53,7 @@ if __name__ == '__main__':
     setlist = pd.read_hdf(dbname, '/meta/lfplist')
 
     # get ready to write to file
-    fname = 'stop_vs_pop_mean_time_freqs.pdf'
+    fname = 'stop_vs_start.pdf'
     event_names = ['stop inflating', 'start inflating']
     Tpre = -1.5
     Tpost = 0.5
