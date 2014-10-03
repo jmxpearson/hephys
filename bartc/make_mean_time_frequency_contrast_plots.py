@@ -50,7 +50,7 @@ if __name__ == '__main__':
     dbname = os.path.expanduser('~/data/bartc/plexdata/bartc.hdf5')
 
     # first, get a list of lfp channels
-    setlist = pd.read_hdf(dbname, '/meta/lfplist')
+    setlist = pd.read_hdf(dbname, '/meta/lfplist')[['patient', 'dataset']].drop_duplicates()
 
     # get ready to write to file
     fname = 'stop_vs_start.pdf'
