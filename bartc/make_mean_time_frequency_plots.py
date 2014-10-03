@@ -56,7 +56,7 @@ if __name__ == '__main__':
 
     # get ready to write to file
     fname = 'mean_time_freqs.pdf'
-    event_name = 'stop inflating'
+    event_name = 'trial_start'
     Tpre = -1.5
     Tpost = 0.5
     baseline_interval = (-1.5, -1.35)

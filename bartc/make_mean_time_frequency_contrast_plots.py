@@ -25,8 +25,6 @@ def make_time_frequency_plot(dtup, event_names, Tpre, Tpost, freqs, baseline_int
     # horrible kludge to drop pathological channels
     bad_channel_list = [(16, 2, 22), (18, 1, 32)]
 
-    # nf = physutils.norm_by_mean(baseline_interval)
-
     all_wavs0 = []
     all_wavs1 = []
     for channel in lfp.columns:
@@ -43,15 +41,8 @@ def make_time_frequency_plot(dtup, event_names, Tpre, Tpost, freqs, baseline_int
     all_wav_mean0 = reduce(lambda x, y: x.add(y, fill_value=0), all_wavs0) / len(all_wavs0)
     all_wav_mean1 = reduce(lambda x, y: x.add(y, fill_value=0), all_wavs1) / len(all_wavs1)
 
-    # normalize across frequencies
-    # normfun = lambda x: x / x[slice(*baseline_interval)].mean()
-
-    # contr_tf, fig1 = lfp.contrast_time_frequency(dtup[2], [times0, times1], Tpre, Tpost, method='wav', normfun=nf, doplot=True, freqs=freqs)
-
-    # mcontr, fig2 = lfp.significant_time_frequency(dtup[2], [times0, times1], Tpre, Tpost, thresh=thresh, niter=1000, method='wav', doplot=True, normfun=nf, freqs=freqs)
-
     fig1 = physutils.tf.plot_time_frequency(all_wav_mean0/all_wav_mean1)
-    return (fig1,) #, fig2
+    return (fig1,) 
 
 if __name__ == '__main__':
 
@@ -63,7 +54,7 @@ if __name__ == '__main__':
 
     # get ready to write to file
     fname = 'stop_vs_pop_mean_time_freqs.pdf'
-    event_names = ['stop inflating', 'popped']
+    event_names = ['stop inflating', 'start inflating']
     Tpre = -1.5
     Tpost = 0.5
     baseline_interval = (-1.5, -1.35)
@@ -73,8 +64,7 @@ if __name__ == '__main__':
     # open pdf for plotting
     with PdfPages(os.path.expanduser('~/Dropbox/hephys/media/figs/' + fname)) as pdf:
 
-        # for _, channel_inds in setlist.iterrows():
-        for channel_inds in [(17, 2)]:
+        for _, channel_inds in setlist.iterrows():
             dtup = tuple(channel_inds)
             figs = make_time_frequency_plot(dtup, event_names, Tpre, Tpost, freqs, baseline_interval, thresh)
             titlestr = "Channel: " + str(dtup) + "\nAlign: " + event_names[0] + " / " + event_names[1]
