@@ -1,3 +1,7 @@
+"""
+For each channel in each dataset, make a time-frequency plot that is a 
+contrast between similar plots for two conditions. 
+"""
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
 import numpy as np
