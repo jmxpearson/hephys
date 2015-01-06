@@ -53,8 +53,10 @@ if __name__ == '__main__':
     setlist = pd.read_hdf(dbname, '/meta/lfplist')[['patient', 'dataset']].drop_duplicates()
 
     # get ready to write to file
-    fname = 'stop_vs_start.pdf'
-    event_names = ['stop inflating', 'start inflating']
+    # fname = 'stop_vs_start.pdf'
+    fname = 'stop_vs_pop.pdf'
+    # event_names = ['stop inflating', 'start inflating']
+    event_names = ['stop inflating', 'popped']
     Tpre = -1.5
     Tpost = 0.5
     baseline_interval = (-1.5, -1.35)
