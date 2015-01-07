@@ -5,7 +5,7 @@ generalized linear model.
 import numpy as np
 import os
 import pandas as pd
-import dbio
+import hephys.dbio as dbio
 
 def set_intervals_to_true(df, starts, stops):
     pairs = zip(starts, stops)
