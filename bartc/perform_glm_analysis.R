@@ -11,6 +11,7 @@ if (args[1] == 'lfp') {
     family <- 'binomial'
     datalist <- chanlist
     measure <- 'auc'
+    lambdatype <- '1se'
 } else if (args[1] == 'spikes') {
     print("Performing spike analysis...")
     filext <- 'spkglmdata.csv'
@@ -18,6 +19,7 @@ if (args[1] == 'lfp') {
     family <- 'poisson'
     datalist <- unitlist
     measure <- 'deviance'
+    lambdatype <- 'min'
 }
 
-fit_all_and_save(filext, outname, family, datalist, measure)
+fit_all_and_save(filext, outname, family, datalist, measure, lambdatype)

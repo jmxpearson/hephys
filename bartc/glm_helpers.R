@@ -1,18 +1,18 @@
-fit_all_and_save <- function(filext, outname, family, datalist, measure) {
+fit_all_and_save <- function(filext, outname, family, datalist, measure, lambdatype) {
   fitobjs <- list()
   for (ind in 1:dim(datalist)[1]) {
     fname <- paste(paste(datalist[ind,], collapse='.'), filext, sep='.')
     dfile <- paste(ddir, fname, sep='/')
     print(dfile)
     dat <- read.table(dfile, sep=',', header=TRUE, row.names=1, colClasses=c('numeric'))
-    thisfit <- run_glm(dat, family, measure)
+    thisfit <- run_glm(dat, family, measure, lambdatype)
     fitobjs[[ind]] <- thisfit
   }
 
   save(fitobjs, file=paste(ddir, outname, sep='/'))
 }
 
-run_glm <- function(dframe, type='binomial', measure="deviance"){
+run_glm <- function(dframe, type='binomial', measure="deviance", lambdatype='1se'){
   # given an input data frame, perform an elastic net regression
   # on the data contained therein
 
@@ -34,7 +34,7 @@ run_glm <- function(dframe, type='binomial', measure="deviance"){
     glmobj <- cv.glmnet(as.matrix(X), y, alpha = alpha, family = type, 
                         foldid = folds, intercept = TRUE, type.measure = measure)
 
-    allobjs[[length(allobjs) + 1]] <- get_best_beta(glmobj)
+    allobjs[[length(allobjs) + 1]] <- get_best_beta(glmobj, lambdatype)
   }
 
   bestobj <- get_best_alpha(allobjs, alphalist)
@@ -47,7 +47,7 @@ run_glm <- function(dframe, type='binomial', measure="deviance"){
 }
 
 partition_data <- function(outcome, nfolds) {
-  require('caret')
+  suppressMessages(require('caret'))
 
   folds <- createFolds(outcome, nfolds)
 
@@ -60,11 +60,13 @@ partition_data <- function(outcome, nfolds) {
   return(foldid)
 }
 
-get_best_beta <- function(glmobj) {
+get_best_beta <- function(glmobj, lambdatype) {
   # given a glmobj from elastic net, extract the cross-validation score and
   # coefficients of the best fit
 
-  minlambda <- glmobj$lambda.1se
+  if (lambdatype == '1se') { minlambda <- glmobj$lambda.1se }
+  else if (lambdatype == 'min') { minlambda <- glmobj$lambda.min }
+
   minlambda.ind <- which(glmobj$lambda == minlambda)
   fit <- glmobj$glmnet.fit
   beta <- fit$beta[, minlambda.ind]
