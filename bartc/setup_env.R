@@ -13,7 +13,7 @@ chanlist <- chanlist[!duplicated(chanlist),]
 cfile <- 'data/valid_units.csv'
 unitlist <- read.csv(paste(adir, cfile, sep='/'), header=FALSE)
 
-library(glmnet)
-library(ggplot2)
-library(plyr)
-library(reshape)
+suppressMessages(library(glmnet))
+suppressMessages(library(ggplot2))
+suppressMessages(library(plyr))
+suppressMessages(library(reshape))
