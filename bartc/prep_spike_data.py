@@ -20,6 +20,17 @@ def make_regressor_is_in_trial(taxis, events):
     stops = events['trial_over']
     return set_intervals_to_true(reg, starts, stops)
 
+def make_regressor_is_control_trial(taxis, events):
+    # takes a dataframe of events and a time axis and returns a binary series
+    reg = pd.Series(0, index=taxis, name='is_control_trial')
+    if 'is_control' in events.columns:
+        control_trials = events.query('is_control == 1')
+        starts = control_trials['trial_start']
+        stops = control_trials['trial_over']
+        return set_intervals_to_true(reg, starts, stops)
+    else:
+        return reg
+
 def make_regressor_is_outcome(taxis, events):
     # takes a dataframe of events and a time axis and returns a binary series
     reg = pd.Series(0, index=taxis, name='is_outcome')
@@ -44,7 +55,7 @@ def make_regressor_elapsed_time(taxis, events):
         slc = slice(*p)
         time = reg[slc].index.values
         # log on this scale is linear on firing rate scale
-        reg[slc] = np.log(time / time[0])  
+        reg[slc] = np.log(time - time[0] + 1)  
     return reg
 
 def make_regressor_is_banked(taxis, events):
@@ -82,7 +93,7 @@ def make_regressor_frame(spikes, events):
     # the j=j is needed because of Python's late binding
     ttype_regressors = [lambda x, y, j=j: make_regressor_trial_type(x, y, j) for j in unique_trial_types]
 
-    regressor_list = [make_regressor_is_in_trial, make_regressor_is_outcome, make_regressor_is_inflating, make_regressor_elapsed_time, make_regressor_is_banked, make_regressor_is_popped] + ttype_regressors
+    regressor_list = [make_regressor_is_in_trial, make_regressor_is_control_trial, make_regressor_is_outcome, make_regressor_is_inflating, make_regressor_elapsed_time, make_regressor_is_banked, make_regressor_is_popped] + ttype_regressors
 
     return pd.concat([f(spikes.index, events) for f in regressor_list], axis=1)
 
