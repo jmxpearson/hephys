@@ -43,7 +43,8 @@ def make_regressor_elapsed_time(taxis, events):
     for p in pairs:
         slc = slice(*p)
         time = reg[slc].index.values
-        reg[slc] = time - time[0] 
+        # log on this scale is linear on firing rate scale
+        reg[slc] = np.log(time / time[0])  
     return reg
 
 def make_regressor_is_banked(taxis, events):
