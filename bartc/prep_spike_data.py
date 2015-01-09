@@ -44,9 +44,6 @@ def make_regressor_elapsed_time(taxis, events):
         slc = slice(*p)
         time = reg[slc].index.values
         reg[slc] = time - time[0] 
-
-    # standardize regressor to unit variance and zero mean
-    reg = (reg - reg.mean()) / reg.std()
     return reg
 
 def make_regressor_is_banked(taxis, events):
