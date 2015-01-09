@@ -19,7 +19,7 @@ if (args[1] == 'lfp') {
     family <- 'poisson'
     datalist <- unitlist
     measure <- 'deviance'
-    lambdatype <- 'min'
+    lambdatype <- '1se'
 }
 
 fit_all_and_save(filext, outname, family, datalist, measure, lambdatype)
