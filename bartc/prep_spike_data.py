@@ -121,7 +121,7 @@ if __name__ == '__main__':
         df = pd.concat([spks, regressors], axis=1)
 
         # write out
-        outdir = '/home/jmp33/data/bartc/'
+        outdir = os.path.expanduser('~/data/bartc/')
         outfile = outdir + '.'.join(map(str, dtup)) + '.spkglmdata.csv'
 
         df.to_csv(outfile)
