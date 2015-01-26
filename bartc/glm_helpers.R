@@ -24,14 +24,14 @@ run_glm <- function(dframe, type='binomial', measure="deviance", lambdatype='1se
   alphalist = seq(0, 1, 0.1)
 
   folds <- partition_data(y, nfolds=10)
-  
+
   # loop over alpha values
   for (alpha in alphalist) {
     # run sparse regression
     # don't include constant in X; glmnet will fit an intercept, 
     # but if we supply
     # one manually, it will be penalized, which we don't want
-    glmobj <- cv.glmnet(as.matrix(X), y, alpha = alpha, family = type, 
+    glmobj <- cv.glmnet(data.matrix(X), y, alpha = alpha, family = type, 
                         foldid = folds, intercept = TRUE, type.measure = measure)
 
     allobjs[[length(allobjs) + 1]] <- get_best_beta(glmobj, lambdatype)
