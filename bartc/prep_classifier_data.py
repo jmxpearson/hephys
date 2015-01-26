@@ -3,6 +3,7 @@ import pandas as pd
 import physutils
 import hephys.dbio as dbio
 import warnings
+import os
 
 def within_range(test_value, anchor_list, radius_tuple):
     # return true when test_value is not within a radius tuple
@@ -22,7 +23,7 @@ def within_range(test_value, anchor_list, radius_tuple):
 np.random.seed(12345)
 
 # open data file
-dbname = '/home/jmp33/data/bartc/plexdata/bartc.hdf5'
+dbname = os.path.expanduser('~/data/bartc/plexdata/bartc.hdf5')
 
 # first, get a list of lfp channels
 setlist = pd.read_hdf(dbname, '/meta/lfplist')
@@ -98,12 +99,13 @@ for name, grp in groups:
     print 'Generating true negatives...'
     maxT = np.max(groupdata.index.values)
     # make some candidate random times
-    Nrand = truepos.shape[0] #3000
-    candidates = np.random.rand(Nrand) * (maxT - Tpre) + Tpre
+    Nrand = truepos.shape[0]  # number to keep
+    Ncand = Nrand * 10  # number of candidates to generate
+    candidates = np.random.rand(Ncand) * (maxT - Tpre) + Tpre
     candidates = np.around(candidates / dt) * dt  # round to nearest dt
     candidates = np.unique(candidates)
     rand_times = filter(lambda x: ~within_range(x, truepos['time'], 
-        (Tpre, Tpost)), candidates)[:1000]
+        (Tpre, Tpost)), candidates)[:Nrand]
     trueneg = pd.DataFrame(rand_times, columns=['time'])
     trueneg['outcome'] = 0
 
@@ -120,7 +122,7 @@ for name, grp in groups:
 
     # write out
     print 'Writing out...'
-    outdir = '/home/jmp33/data/bartc/'
+    outdir = os.path.expanduser('~/data/bartc/')
     outfile = outdir + str(dtup[0]) + '.' + str(dtup[1]) + '.lfpglmdata.csv'
 
     tset.to_csv(outfile)
