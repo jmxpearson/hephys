@@ -23,7 +23,7 @@ run_glm <- function(dframe, type='binomial', measure="deviance", lambdatype='1se
   allobjs = list()
   alphalist = seq(0, 1, 0.1)
 
-  folds <- partition_data(y, nfolds=10)
+  folds <- partition_data(y, nfolds=5)
 
   # loop over alpha values
   for (alpha in alphalist) {
