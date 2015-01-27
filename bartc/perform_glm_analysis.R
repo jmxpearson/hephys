@@ -1,6 +1,7 @@
 suppressMessages(library(glmnet))
 source('glm_helpers.R')
 source('setup_env.R')
+set.seed(77654)
 
 args <- commandArgs(TRUE)
 
