@@ -91,8 +91,7 @@ for name, grp in groups:
     evt = dbio.fetch(dbname, 'events', *dtup[:2])['banked'].dropna()
     evt = np.around(evt / dt) * dt  # round to nearest dt
     # extend with nearby times
-    truepos = (pd.DataFrame(pd.concat([evt, evt - 0.5, evt - 1.0]).values, 
-        columns=['time']))
+    truepos = (pd.DataFrame(evt.values, columns=['time']))
     truepos['outcome'] = 1
 
     # grab random timepoints (true negatives in training set)
@@ -117,6 +116,7 @@ for name, grp in groups:
     print 'Grabbing data for each event...'
     meanpwr = pd.rolling_mean(groupdata.dataframe, 
         np.ceil(Tpre / dt), min_periods=1)
+    meanpwr.index = np.around(meanpwr / dt) * dt  # round index to nearest dt
     tset = pd.concat([allevt, meanpwr], axis=1, join='inner')
     tset = tset.dropna()  # can't send glmnet any row with a NaN
 
