@@ -103,6 +103,7 @@ for name, grp in groups:
     candidates = np.random.rand(Ncand) * (maxT - Tpre) + Tpre
     candidates = np.around(candidates / dt) * dt  # round to nearest dt
     candidates = np.unique(candidates)
+    np.random.shuffle(candidates)
     rand_times = filter(lambda x: ~within_range(x, truepos['time'], 
         (Tpre, Tpost)), candidates)[:Nrand]
     trueneg = pd.DataFrame(rand_times, columns=['time'])
