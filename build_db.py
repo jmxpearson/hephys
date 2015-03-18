@@ -2,7 +2,8 @@ import h5py
 import pandas as pd
 import scipy.io as sio
 import numpy as np
-from physutils import make_path, decimate
+from physutils import decimate
+from dbio import make_path
 
 class DataSets:
     def __init__(self, data_dir, behavior_dir, channel_file, spk_file, lfp_file, behavior_file, output_file, plexon_event_codes, flatten_events=False):
@@ -59,7 +60,8 @@ class DataSets:
         sr = dset['srlfp'].value.squeeze()
 
         vv = dat
-        decfrac = 5.0
+        desired_rate = 200.  # desired final sampling rate (Hz)
+        decfrac = sr / desired_rate
         vv = decimate(dat, decfrac)  # decimate data to 200 Hz
         sr = sr / decfrac;
         dt = (1. / sr).round(3)
