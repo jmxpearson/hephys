@@ -61,14 +61,14 @@ class DataSets:
 
         vv = dat
         desired_rate = 200.  # desired final sampling rate (Hz)
-        decfrac = sr / desired_rate
+        decfrac = int(sr / desired_rate)
         vv = decimate(dat, decfrac)  # decimate data to 200 Hz
         sr = sr / decfrac;
         dt = (1. / sr).round(3)
 
         times = (np.arange(0, vv.size) * dt).round(3).squeeze()
         ddict = {'patient': ftup[0], 'dataset': ftup[1], 
-        'channel': ftup[2], 'time': times, 'voltage': vv}
+        'channel': ftup[2], 'time': times, 'voltage': vv.values.squeeze()}
 
         df = pd.DataFrame(ddict)
      

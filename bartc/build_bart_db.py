@@ -1,4 +1,4 @@
-from build_db import *
+from hephys.build_db import *
 
 # locations of relevant files
 ddir = '/home/jmp33/data/bartc/plexdata/'
