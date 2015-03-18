@@ -39,9 +39,13 @@ run_glm <- function(dframe, type='binomial', measure="deviance", lambdatype='1se
 
   bestobj <- get_best_alpha(allobjs, alphalist)
 
+  # plot(bestobj$glmobj)
+  # fit <- bestobj$glmobj$glmnet.fit
+  # plot(fit, xvar='lambda', label=TRUE)
+
+  svg('auc.svg')
   plot(bestobj$glmobj)
-  fit <- bestobj$glmobj$glmnet.fit
-  plot(fit, xvar='lambda', label=TRUE)
+  dev.off()
 
   return(bestobj)
 }
