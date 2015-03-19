@@ -4,6 +4,7 @@ source('setup_env.R')
 set.seed(77654)
 
 args <- commandArgs(TRUE)
+shuffle <- FALSE
 
 if (args[1] == 'lfp') {
     print("Performing LFP analysis...")
@@ -20,7 +21,14 @@ if (args[1] == 'lfp') {
     family <- 'poisson'
     datalist <- unitlist
     measure <- 'deviance'
-    lambdatype <- '1se'
+    lambdatype <- c('1se', 'min', 'none')
 }
 
-fit_all_and_save(filext, outname, family, datalist, measure, lambdatype)
+if (length(args) > 1) {
+    if (args[2] == 'shuffle') {
+        shuffle <- TRUE
+        lambdatype <- '1se'
+    }
+}
+
+fit_all_and_save(filext, outname, family, datalist, measure, lambdatype, shuffle)
