@@ -1,24 +1,26 @@
-fit_all_and_save <- function(filext, outname, family, datalist, measure, lambdatype) {
+fit_all_and_save <- function(filext, outname, family, datalist, measure, lambdatype, shuffle=FALSE) {
   fitobjs <- list()
   for (ind in 1:dim(datalist)[1]) {
     fname <- paste(paste(datalist[ind,], collapse='.'), filext, sep='.')
     dfile <- paste(ddir, fname, sep='/')
     print(dfile)
     dat <- read.table(dfile, sep=',', header=TRUE, row.names=1, colClasses=c('numeric'))
-    thisfit <- run_glm(dat, family, measure, lambdatype)
+    thisfit <- run_glm(dat, family, measure, lambdatype, shuffle)
     fitobjs[[ind]] <- thisfit
   }
 
   save(fitobjs, file=paste(ddir, outname, sep='/'))
 }
 
-run_glm <- function(dframe, type='binomial', measure="deviance", lambdatype='1se'){
+run_glm <- function(dframe, type='binomial', measure="deviance", lambdatype='1se', shuffle=FALSE){
   # given an input data frame, perform an elastic net regression
   # on the data contained therein
 
   # make model matrix
   y <- dframe[, 1]
   X <- dframe[, -1]
+
+  if (shuffle) y <- sample(y)
 
   allobjs = list()
   alphalist = seq(0.1, 1, 0.1)
@@ -34,18 +36,32 @@ run_glm <- function(dframe, type='binomial', measure="deviance", lambdatype='1se
     glmobj <- cv.glmnet(data.matrix(X), y, alpha = alpha, family = type, 
                         foldid = folds, intercept = TRUE, type.measure = measure)
 
-    allobjs[[length(allobjs) + 1]] <- get_best_beta(glmobj, lambdatype)
+    # pull out regression coefficients for best model using different
+    # regularization strategies
+    for (reg in lambdatype) {
+      allobjs[[reg]][[length(allobjs[[reg]]) + 1]] <- get_best_beta(glmobj, reg)
+    }
   }
 
-  bestobj <- get_best_alpha(allobjs, alphalist)
+  bestobj <- list()
+  for (reg in lambdatype) {
+    if (reg == 'none') {
+      # if no regularization, pick smallest alpha
+      bestobj[[reg]] <- allobjs[[reg]][[1]]
+    } else {
+      bestobj[[reg]] <- get_best_alpha(allobjs[[reg]], alphalist)
+    }
+  }
 
-  # plot(bestobj$glmobj)
-  # fit <- bestobj$glmobj$glmnet.fit
-  # plot(fit, xvar='lambda', label=TRUE)
-
+  # print auc curve to figure
   svg('auc.svg')
-  plot(bestobj$glmobj)
+  # use first listed regularization type
+  plot(bestobj[[lambdatype[1]]]$glmobj)
   dev.off()
+
+  # if user only asked for one lambda type, return single object, not list
+  # of objects
+  if (length(bestobj) == 1) bestobj <- bestobj[[1]]
 
   return(bestobj)
 }
@@ -70,6 +86,7 @@ get_best_beta <- function(glmobj, lambdatype) {
 
   if (lambdatype == '1se') { minlambda <- glmobj$lambda.1se }
   else if (lambdatype == 'min') { minlambda <- glmobj$lambda.min }
+  else if (lambdatype == 'none') { minlambda <- min(glmobj$lambda) }
 
   minlambda.ind <- which(glmobj$lambda == minlambda)
   fit <- glmobj$glmnet.fit
@@ -83,13 +100,12 @@ get_best_beta <- function(glmobj, lambdatype) {
 get_best_alpha <- function(objlist, alphalist) {
   # given a list of objects returned by get_best_beta and a list of alpha 
   # values, return the object corresponding to the highest score
-
   measure_type <- tolower(objlist[[1]]$glmobj$name)
   if (grepl('auc', measure_type)) {
     extract_best <- which.max
   } else {
     extract_best <- which.min
-  }
+  } 
 
   scorelist <- sapply(objlist, function(x) {x$score})
   best_ind <- extract_best(scorelist)  # if using auc, want max score
